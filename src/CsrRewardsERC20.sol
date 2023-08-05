@@ -11,7 +11,7 @@ interface Turnstile {
 }
 
 /**
- * @title CSR Earning Token
+ * @title CSR Reward Accumulating Token
  * @author DAZER
  * ERC20 extended to evenly distribute CSR to non-contract token holders
  * Logic is borrowed and modified from Synthetix Staking Rewards
@@ -82,8 +82,6 @@ contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
 
     /// INTERNAL FUNCTIONS
 
-    // Can still claim CSR from a contract if transfer occurs in constructor on deploy
-    // NB Only up to the amount transferred initially and any transfer out permanently lowers 
     function _beforeTokenTransfer(address from, address to, uint amount) internal virtual override {
         // Transferring to EOA
         if (to.code.length == 0) {
@@ -140,12 +138,14 @@ contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
 
     /// EXTERNAL FUNCTIONS
 
-    function getReward() public nonReentrant {
+    /// @notice Token holder function for claiming CSR rewards
+    function getReward() external nonReentrant {
         _updateReward(msg.sender);
         _getReward(msg.sender);
     }
 
-    function claimCSR() external nonReentrant {
+    /// @notice Public function for collecting and distributing contract accumulated CSR
+    function collectCSR() external nonReentrant {
         uint amountToClaim = claimableAmountCSR();
         turnstile.withdraw(csrID, payable(address(this)), amountToClaim);
         uint kickbackAmount = amountToClaim / 100; // 1%
