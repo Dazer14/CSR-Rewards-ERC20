@@ -8,7 +8,8 @@
 ### Reward eligible contracts
 - It is possible for a contract to be eligible for CSR reward accumulation and claiming 
 - If a contract has a constructor routine that transfers some tokens in, it will perform a one time bypass of the contract check and be registered in the reward distribution accounting
-- This could inspire some peripheral products and designs
+- Any amount transferred out from the contract will reduce its reward eligible balance with no possibility to increase
+- Attempting to use this pattern should be done carefully and NOT include logic to further accumulate tokens after deploy, only claiming and selling
 
 ### Use
 - Testing/auditing still needed, not recommended for use yet
