@@ -13,10 +13,10 @@ interface Turnstile {
 /**
  * @title CSR Reward Accumulating Token
  * @author DAZER
- * ERC20 extended to evenly distribute CSR to non-contract token holders
+ * ERC20 extended to evenly distribute CSR to reward eligible holders
  * Logic is borrowed and modified from Synthetix Staking Rewards
  */
-contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
+abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
     uint public rewardsDuration = 1 minutes;
     uint public periodFinish;
     uint public rewardRate;
@@ -34,12 +34,7 @@ contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
 
     Turnstile public turnstile = Turnstile(0xEcf044C5B4b867CFda001101c617eCd347095B44);
 
-    constructor(
-        string memory _name, 
-        string memory _symbol,
-        uint _totalSupply
-    ) ERC20(_name, _symbol) {
-        _mint(msg.sender, _totalSupply);
+    constructor() {
         csrID = turnstile.register(address(this));
     }
 
@@ -83,19 +78,24 @@ contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
 
     /// INTERNAL FUNCTIONS
 
+    function _increaseRewardEligibleBalance(address to, uint amount) internal {
+        _totalRewardEligibleSupply += amount;
+        _rewardEligibleBalances[to] += amount;
+        _updateReward(to);
+    }
+
     function _beforeTokenTransfer(address from, address to, uint amount) internal virtual override {
-        // Transferring to EOA or contract constructor, ignore if minting in this contracts constructor
-        // First time transfer to will make that address an eligible reward receiver
-        bool eligibleTo = _rewardEligibleAddress[to];
-        if (eligibleTo || (to.code.length == 0 && to != address(this))) {
-            if (!eligibleTo) {
-                _rewardEligibleAddress[to] = true;
-            }
-            _totalRewardEligibleSupply += amount;
-            _rewardEligibleBalances[to] += amount;
-            _updateReward(to);
+        /**
+         * @dev First time transfer to address with code size 0 will register as reward eligible
+         * Contracts will have code size 0 while being deployed so can auto-whitelist by receiving tokens in constructor
+         */
+        if (_rewardEligibleAddress[to]) {
+            _increaseRewardEligibleBalance(to, amount);
+        } else if (to.code.length == 0 && to != address(this)) {
+            _rewardEligibleAddress[to] = true;
+            _increaseRewardEligibleBalance(to, amount);
         }
-        // Transferring from EOA or contract holding from deploy
+
         if (_rewardEligibleAddress[from]) {
             _totalRewardEligibleSupply -= amount;
             _rewardEligibleBalances[from] -= amount;
