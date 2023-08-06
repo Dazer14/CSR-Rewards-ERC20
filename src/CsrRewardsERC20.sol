@@ -63,11 +63,13 @@ contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
         if (_totalRewardEligibleSupply == 0) {
             return rewardPerTokenStored;
         }
+        // SafeMath => checked arithmatic, needs review
         return rewardPerTokenStored + 
             ((lastTimeRewardApplicable() - lastUpdateTime) * rewardRate * 1e18 / _totalRewardEligibleSupply);
     }
 
     function earned(address account) public view returns (uint) {
+        // SafeMath => checked arithmatic, needs review
         return (_rewardEligibleBalances[account] * (rewardPerToken() - userRewardPerTokenPaid[account]) / 1e18) + rewards[account];
     }
 
@@ -83,7 +85,7 @@ contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
 
     function _beforeTokenTransfer(address from, address to, uint amount) internal virtual override {
         // Transferring to EOA or contract constructor, ignore if minting in this contracts constructor
-        // First time transfer to non existing contract address will make that address an eligible reward receiver
+        // First time transfer to will make that address an eligible reward receiver
         bool eligibleTo = _rewardEligibleAddress[to];
         if (eligibleTo || (to.code.length == 0 && to != address(this))) {
             if (!eligibleTo) {
@@ -93,13 +95,12 @@ contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
             _rewardEligibleBalances[to] += amount;
             _updateReward(to);
         }
-
         // Transferring from EOA or contract holding from deploy
         if (_rewardEligibleAddress[from]) {
             _totalRewardEligibleSupply -= amount;
             _rewardEligibleBalances[from] -= amount;
             _updateReward(from);
-            _getReward(from);
+            // _getReward(from);
         }
     }
 
@@ -128,6 +129,7 @@ contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
     function _notifyRewardAmount(uint reward) internal {
         _updateReward(address(0));
 
+        // SafeMath => checked arithmatic, needs review
         if (block.timestamp >= periodFinish) {
             rewardRate = reward / rewardsDuration;
         } else {
@@ -137,6 +139,7 @@ contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
         }
 
         uint balance = address(this).balance;
+        // This check might not be needed
         require(rewardRate <= balance / rewardsDuration, "CsrRewardsERC20: Provided reward too high");
 
         lastUpdateTime = block.timestamp;
@@ -147,12 +150,12 @@ contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
 
     /// @notice Token holder function for claiming CSR rewards
     function getReward() external nonReentrant {
-        require(msg.sender == tx.origin, "CsrRewardsERC20: Only EOA");
         _updateReward(msg.sender);
         _getReward(msg.sender);
     }
 
     /// @notice Public function for collecting and distributing contract accumulated CSR
+    /// @notice 1% kickback to caller
     function collectCSR() external nonReentrant {
         uint amountToClaim = claimableAmountCSR();
         turnstile.withdraw(csrID, payable(address(this)), amountToClaim);

@@ -10,7 +10,7 @@
 
 ### Reward Eligible Contracts
 - Contracts that transfer in some amount of tokens during construction become reward eligible
-- Existing smart contracts will never be eligible for rewards
+- Existing smart contracts are not eligible for rewards
 - Custom contracts can hold this ERC20 and collect CSR 
     - Ex. Extra source of fee revenue from Collateralized positions
 - This makes the token ready to deploy across defi and permissionlessly composite
