@@ -17,10 +17,8 @@ interface Turnstile {
  * Logic is borrowed and modified from Synthetix Staking Rewards
  */
 contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
-    // Distribute over 1 day to prevent claim manipulation
-    uint public rewardsDuration = 1 days;
+    uint public rewardsDuration = 1 minutes;
     uint public periodFinish;
-
     uint public rewardRate;
     uint public lastUpdateTime;
     uint public rewardPerTokenStored;
@@ -30,6 +28,7 @@ contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
 
     uint private _totalRewardEligibleSupply;
     mapping(address => uint) private _rewardEligibleBalances;
+    mapping(address => bool) private _rewardEligibleAddress;
 
     uint public immutable csrID;
 
@@ -83,16 +82,20 @@ contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
     /// INTERNAL FUNCTIONS
 
     function _beforeTokenTransfer(address from, address to, uint amount) internal virtual override {
-        // Transferring to EOA
-        if (to.code.length == 0) {
+        // Transferring to EOA or contract constructor, ignore if minting in this contracts constructor
+        // First time transfer to non existing contract address will make that address an eligible reward receiver
+        bool eligibleTo = _rewardEligibleAddress[to];
+        if (eligibleTo || (to.code.length == 0 && to != address(this))) {
+            if (!eligibleTo) {
+                _rewardEligibleAddress[to] = true;
+            }
             _totalRewardEligibleSupply += amount;
             _rewardEligibleBalances[to] += amount;
             _updateReward(to);
         }
 
-        // Transferring from EOA or contract holding from deploy, ignore mint
-        bool transferringFromEOA = from.code.length == 0;
-        if ((from != address(0)) && (transferringFromEOA || (!transferringFromEOA && _rewardEligibleBalances[from] > 0))) { 
+        // Transferring from EOA or contract holding from deploy
+        if (_rewardEligibleAddress[from]) {
             _totalRewardEligibleSupply -= amount;
             _rewardEligibleBalances[from] -= amount;
             _updateReward(from);
@@ -109,12 +112,16 @@ contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
         }
     }
 
+    function _transferCANTO(address to, uint amount) internal {
+        (bool success, ) = payable(to).call{value: amount}("");
+        require(success, "CsrRewardsERC20: Unable to send value, recipient may have reverted");
+    }
+
     function _getReward(address account) internal {
         uint reward = rewards[account];
         if (reward > 0) {
             rewards[account] = 0;
-            (bool success, ) = payable(account).call{value: reward}("");
-            require(success, "CsrRewardsERC20: unable to send value, recipient may have reverted");
+            _transferCANTO(account, reward);
         }
     }
 
@@ -130,7 +137,7 @@ contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
         }
 
         uint balance = address(this).balance;
-        require(rewardRate <= balance / rewardsDuration, "Provided reward too high");
+        require(rewardRate <= balance / rewardsDuration, "CsrRewardsERC20: Provided reward too high");
 
         lastUpdateTime = block.timestamp;
         periodFinish = block.timestamp + rewardsDuration;
@@ -140,6 +147,7 @@ contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
 
     /// @notice Token holder function for claiming CSR rewards
     function getReward() external nonReentrant {
+        require(msg.sender == tx.origin, "CsrRewardsERC20: Only EOA");
         _updateReward(msg.sender);
         _getReward(msg.sender);
     }
@@ -148,10 +156,9 @@ contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
     function collectCSR() external nonReentrant {
         uint amountToClaim = claimableAmountCSR();
         turnstile.withdraw(csrID, payable(address(this)), amountToClaim);
-        uint kickbackAmount = amountToClaim / 100; // 1%
+        uint kickbackAmount = amountToClaim / 100;
         _notifyRewardAmount(amountToClaim - kickbackAmount);
-        (bool success, ) = payable(msg.sender).call{value: kickbackAmount}("");
-        require(success, "CsrRewardsERC20: unable to send value, recipient may have reverted");
+        _transferCANTO(msg.sender, kickbackAmount);
     }
 
 }
