@@ -12,8 +12,7 @@ interface Turnstile {
 
 /**
  * @title CSR Reward Accumulating Token
- * @author DAZER
- * ERC20 extended to evenly distribute CSR to reward eligible holders
+ * Evenly distributes all CSR earned to reward eligible holders
  * Logic is borrowed and modified from Synthetix Staking Rewards
  */
 abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
@@ -31,11 +30,21 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
     mapping(address => bool) private _rewardEligibleAddress;
 
     uint public immutable csrID;
+    bool public immutable usingFee;
+    uint8 public immutable feeBasisPoints;
 
     Turnstile public turnstile = Turnstile(0xEcf044C5B4b867CFda001101c617eCd347095B44);
 
-    constructor() {
+    constructor(
+        bool _usingFee,
+        uint8 _feeBasisPoints
+    ) {
         csrID = turnstile.register(address(this));
+
+        if (_usingFee) {
+            usingFee = true;
+            feeBasisPoints = _feeBasisPoints;
+        }
     }
 
     receive() external payable {}
@@ -72,13 +81,13 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
         return rewardRate * rewardsDuration;
     }
 
-    function claimableAmountCSR() public view returns (uint) {
+    function turnstileBalance() public view returns (uint) {
         return turnstile.balances(csrID);
     }
 
     /// INTERNAL FUNCTIONS
 
-    function _increaseRewardEligibleBalance(address to, uint amount) internal {
+    function _increaseRewardEligibleBalance(address to, uint amount) private {
         _totalRewardEligibleSupply += amount;
         _rewardEligibleBalances[to] += amount;
         _updateReward(to);
@@ -89,22 +98,24 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
          * @dev First time transfer to address with code size 0 will register as reward eligible
          * Contracts will have code size 0 while being deployed so can auto-whitelist by receiving tokens in constructor
          */
+
         if (_rewardEligibleAddress[to]) {
             _increaseRewardEligibleBalance(to, amount);
-        } else if (to.code.length == 0 && to != address(this)) {
-            _rewardEligibleAddress[to] = true;
-            _increaseRewardEligibleBalance(to, amount);
+        } else {
+            if (to.code.length == 0 && to != address(this)) {
+                _increaseRewardEligibleBalance(to, amount);
+                _rewardEligibleAddress[to] = true;
+            }
         }
 
         if (_rewardEligibleAddress[from]) {
             _totalRewardEligibleSupply -= amount;
             _rewardEligibleBalances[from] -= amount;
             _updateReward(from);
-            // _getReward(from);
         }
     }
 
-    function _updateReward(address account) internal {
+    function _updateReward(address account) private {
         rewardPerTokenStored = rewardPerToken();
         lastUpdateTime = lastTimeRewardApplicable();
         if (account != address(0)) {
@@ -118,7 +129,7 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
         require(success, "CsrRewardsERC20: Unable to send value, recipient may have reverted");
     }
 
-    function _getReward(address account) internal {
+    function _getReward(address account) private {
         uint reward = rewards[account];
         if (reward > 0) {
             rewards[account] = 0;
@@ -126,7 +137,7 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
         }
     }
 
-    function _notifyRewardAmount(uint reward) internal {
+    function _notifyRewardAmount(uint reward) private {
         _updateReward(address(0));
 
         // SafeMath => checked arithmatic, needs review
@@ -146,7 +157,7 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
         periodFinish = block.timestamp + rewardsDuration;
     }
 
-    /// EXTERNAL FUNCTIONS
+    /// MUTABLE FUNCTIONS
 
     /// @notice Token holder function for claiming CSR rewards
     function getReward() external nonReentrant {
@@ -155,13 +166,18 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
     }
 
     /// @notice Public function for collecting and distributing contract accumulated CSR
-    /// @notice 1% kickback to caller
     function collectCSR() external nonReentrant {
-        uint amountToClaim = claimableAmountCSR();
+        uint amountToClaim = turnstileBalance();
+
         turnstile.withdraw(csrID, payable(address(this)), amountToClaim);
-        uint kickbackAmount = amountToClaim / 100;
-        _notifyRewardAmount(amountToClaim - kickbackAmount);
-        _transferCANTO(msg.sender, kickbackAmount);
+
+        if (usingFee) {
+            uint feeAmount = amountToClaim * feeBasisPoints / 10000;
+            _notifyRewardAmount(amountToClaim - feeAmount);
+            _transferCANTO(msg.sender, feeAmount);
+        } else {
+            _notifyRewardAmount(amountToClaim);
+        }
     }
 
 }
