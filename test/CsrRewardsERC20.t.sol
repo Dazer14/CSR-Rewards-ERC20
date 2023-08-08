@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 import "forge-std/Vm.sol";
 import "forge-std/console2.sol";
 
-import "src/CsrRewardsERC20.sol";
+import "src/contracts/CsrRewardsERC20.sol";
 import "lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 
 // forge test --fork-url https://canto.gravitychain.io -vv
