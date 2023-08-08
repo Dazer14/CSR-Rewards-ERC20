@@ -1,12 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// Assume CsrRewardsERC20 token is already deployed
-// This contract wants to become reward eligible
-// Using Create2 opcode, will be able to get the deploy address
-// Ideally, store the address and have function that sends a single wei of the token
-// Would need to load small amount
-
 interface ICsrRewardsERC20 {
     function earned(address account) external view returns (uint);
     function getReward() external;
@@ -21,9 +15,9 @@ contract RewardEligibleContract {
     address private immutable _csrRewardsToken;
     address public immutable owner;
 
-    constructor(address csrRewardsToken_) {
+    constructor(address csrRewardsToken_, address _owner) {
         _csrRewardsToken = csrRewardsToken_;
-        owner = msg.sender;
+        owner = _owner;
     }
 
     receive() external payable {}
