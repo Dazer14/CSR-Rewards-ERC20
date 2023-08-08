@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.0;
 
 import "lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
+// import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "lib/openzeppelin-contracts/contracts/security/ReentrancyGuard.sol";
+// import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 interface Turnstile {
     function register(address) external returns (uint);
@@ -12,13 +14,14 @@ interface Turnstile {
 
 /**
  * @title CSR Reward Accumulating Token
- * Evenly distributes all CSR earned to reward eligible holders
+ * Distributes all CSR earned to reward eligible holders
  * Logic is borrowed and modified from Synthetix Staking Rewards
  */
 abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
-    uint public rewardsDuration = 1 minutes;
+    uint public rewardsDuration = 1 seconds;
     uint public periodFinish;
     uint public rewardRate;
+
     uint public lastUpdateTime;
     uint public rewardPerTokenStored;
 
@@ -39,15 +42,15 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
         bool _usingFee,
         uint8 _feeBasisPoints
     ) {
-        csrID = turnstile.register(address(this));
+        usingFee = _usingFee;
+        feeBasisPoints = _feeBasisPoints;
 
-        if (_usingFee) {
-            usingFee = true;
-            feeBasisPoints = _feeBasisPoints;
-        }
+        csrID = turnstile.register(address(this));
     }
 
-    receive() external payable {}
+    receive() external payable {
+        require(msg.sender == address(turnstile), "CsrRewardsERC20: Only turnstile transfers will be processed for rewards");
+    }
 
     /// VIEW FUNCTIONS
 
@@ -77,42 +80,60 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
         return (_rewardEligibleBalances[account] * (rewardPerToken() - userRewardPerTokenPaid[account]) / 1e18) + rewards[account];
     }
 
-    function getRewardForDuration() external view returns (uint) {
-        return rewardRate * rewardsDuration;
-    }
-
     function turnstileBalance() public view returns (uint) {
         return turnstile.balances(csrID);
     }
 
     /// INTERNAL FUNCTIONS
 
-    function _increaseRewardEligibleBalance(address to, uint amount) private {
-        _totalRewardEligibleSupply += amount;
-        _rewardEligibleBalances[to] += amount;
-        _updateReward(to);
+    function _transferCANTO(address to, uint amount) internal {
+        (bool success, ) = payable(to).call{value: amount}("");
+        require(success, "CsrRewardsERC20: Unable to send value, recipient may have reverted");
     }
 
-    function _beforeTokenTransfer(address from, address to, uint amount) internal virtual override {
+    function _afterTokenTransfer(address from, address to, uint amount) internal virtual override {
         /**
          * @dev First time transfer to address with code size 0 will register as reward eligible
          * Contracts will have code size 0 while being deployed so can auto-whitelist by receiving tokens in constructor
          */
-
         if (_rewardEligibleAddress[to]) {
             _increaseRewardEligibleBalance(to, amount);
         } else {
-            if (to.code.length == 0 && to != address(this)) {
+            if (to.code.length == 0) {
                 _increaseRewardEligibleBalance(to, amount);
                 _rewardEligibleAddress[to] = true;
             }
         }
 
         if (_rewardEligibleAddress[from]) {
+            _updateReward(from);
             _totalRewardEligibleSupply -= amount;
             _rewardEligibleBalances[from] -= amount;
-            _updateReward(from);
         }
+    }
+
+    function _increaseRewardEligibleBalance(address to, uint amount) private {
+        _updateReward(to);
+        _totalRewardEligibleSupply += amount;
+        _rewardEligibleBalances[to] += amount;
+    }
+
+    function _notifyRewardAmount(uint reward) private {
+        // Should be able to replace this with just {rewardPerTokenStored = rewardPerToken();} to avoid extra write
+        _updateReward(address(0));
+
+        // SafeMath => checked arithmatic, needs review
+        if (block.timestamp >= periodFinish) {
+            rewardRate = reward / rewardsDuration;
+        } else {
+            // Dead code??
+            uint remaining = periodFinish - block.timestamp;
+            uint leftover = remaining * rewardRate;
+            rewardRate = (reward + leftover) / rewardsDuration;
+        }
+
+        lastUpdateTime = block.timestamp;
+        periodFinish = block.timestamp + rewardsDuration;
     }
 
     function _updateReward(address account) private {
@@ -124,50 +145,23 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
         }
     }
 
-    function _transferCANTO(address to, uint amount) internal {
-        (bool success, ) = payable(to).call{value: amount}("");
-        require(success, "CsrRewardsERC20: Unable to send value, recipient may have reverted");
-    }
-
-    function _getReward(address account) private {
-        uint reward = rewards[account];
-        if (reward > 0) {
-            rewards[account] = 0;
-            _transferCANTO(account, reward);
-        }
-    }
-
-    function _notifyRewardAmount(uint reward) private {
-        _updateReward(address(0));
-
-        // SafeMath => checked arithmatic, needs review
-        if (block.timestamp >= periodFinish) {
-            rewardRate = reward / rewardsDuration;
-        } else {
-            uint remaining = periodFinish - block.timestamp;
-            uint leftover = remaining * rewardRate;
-            rewardRate = (reward + leftover) / rewardsDuration;
-        }
-
-        uint balance = address(this).balance;
-        // This check might not be needed
-        require(rewardRate <= balance / rewardsDuration, "CsrRewardsERC20: Provided reward too high");
-
-        lastUpdateTime = block.timestamp;
-        periodFinish = block.timestamp + rewardsDuration;
-    }
-
-    /// MUTABLE FUNCTIONS
+    /// MUTABLE EXTERNAL FUNCTIONS
 
     /// @notice Token holder function for claiming CSR rewards
     function getReward() external nonReentrant {
         _updateReward(msg.sender);
-        _getReward(msg.sender);
+        uint reward = rewards[msg.sender];
+        if (reward > 0) {
+            rewards[msg.sender] = 0;
+            _transferCANTO(msg.sender, reward);
+        }
     }
 
     /// @notice Public function for collecting and distributing contract accumulated CSR
-    function collectCSR() external nonReentrant {
+    function withdrawFromTurnstile() external nonReentrant {
+        require(msg.sender == tx.origin, "CsrRewardsERC20: Only EOA can withdraw from turnstile");
         uint amountToClaim = turnstileBalance();
+        require(amountToClaim > 0, "CsrRewardsERC20: No CSR to claim");
 
         turnstile.withdraw(csrID, payable(address(this)), amountToClaim);
 
