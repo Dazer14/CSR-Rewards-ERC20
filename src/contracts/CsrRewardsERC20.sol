@@ -99,6 +99,7 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
         /**
          * @dev First time transfer to address with code size 0 will register as reward eligible
          * Contracts will have code size 0 while being deployed so can auto-whitelist by receiving tokens in constructor
+         * Can also use Create2 to compute address and transfer tokens there to make eligible
          * NB Self-minting in constructor makes this contract reward eligible
          */
         if (_rewardEligibleAddress[to]) {

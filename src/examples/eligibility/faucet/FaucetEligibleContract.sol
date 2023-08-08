@@ -11,13 +11,19 @@ interface IERC20 {
     function balanceOf(address account) external view returns (uint256);
 }
 
-contract RewardEligibleContract {
+interface IEligibilityFaucet {
+    function drip() external;
+}
+
+contract FaucetEligibleContract {
     address private immutable _csrRewardsToken;
     address public immutable owner;
 
-    constructor(address csrRewardsToken_, address _owner) {
+    constructor(address csrRewardsToken_, address _owner, address faucet) {
         _csrRewardsToken = csrRewardsToken_;
         owner = _owner;
+
+        IEligibilityFaucet(faucet).drip(); // Made eligible
     }
 
     receive() external payable {}
