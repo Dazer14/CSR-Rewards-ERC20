@@ -6,6 +6,7 @@ import "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
 /// @dev Simple faucet for making contracts CsrRewardsERC20 reward eligible
 /// USE: Deploy with token address and send a small amount of tokens in
+/// Then call drip from the constructor of the contract you want to make reward eligible
 contract EligibilityFaucet {
     IERC20 public immutable csrRewardsToken;
 

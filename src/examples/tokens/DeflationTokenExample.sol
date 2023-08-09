@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 // import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 
-import "../contracts/CsrRewardsERC20.sol";
+import "../../contracts/CsrRewardsERC20.sol";
 
 contract DeflationTokenExample is ERC20, CsrRewardsERC20 {
     uint public immutable deflationBasisPoints;
@@ -30,7 +30,7 @@ contract DeflationTokenExample is ERC20, CsrRewardsERC20 {
     }
 
     function _burnAmount(uint amount) internal virtual returns (uint amountToTransfer) {
-        uint amountToBurn = amount * feeBasisPoints / 10000;
+        uint amountToBurn = amount * deflationBasisPoints / 10000;
         amountToTransfer = amount - amountToBurn;
         _burn(msg.sender, amountToBurn);
     }  
@@ -43,7 +43,9 @@ contract DeflationTokenExample is ERC20, CsrRewardsERC20 {
 
     function transferFrom(address from, address to, uint256 amount) public virtual override returns (bool) {
         uint amountToTransfer = _burnAmount(amount);
-        super.transferFrom(from, to, amountToTransfer);
+        address spender = _msgSender();
+        _spendAllowance(from, spender, amount);
+        _transfer(from, to, amountToTransfer);
         return true;
     }
 }

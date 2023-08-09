@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 // import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "lib/openzeppelin-contracts/contracts/security/ReentrancyGuard.sol";
+import "lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 // import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "lib/openzeppelin-contracts/contracts/security/ReentrancyGuard.sol";
 
 interface ITurnstile {
     function register(address) external returns (uint);
@@ -131,9 +131,21 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
         userRewardPerTokenPaid[account] = rewardPerTokenStored;
     }
 
+    // function _updateReward(address account) private {
+    //     if (rewardsDelivered) {
+    //         rewardPerTokenStored = rewardPerToken();
+    //         rewardsDelivered = false;
+    //     }
+    //     rewards[account] = earned(account);
+    //     userRewardPerTokenPaid[account] = rewardPerTokenStored;
+    // }
+
     function _registerRewardDelivery(uint rewardAmount) private {
+        // Is this absolutely needed?
         rewardPerTokenStored = rewardPerToken();
         rewardAmountDelivered = rewardAmount;
+        // Possible to do away with flag and do update logic here?
+        // Do we have to wait until next block/transfer?
         rewardsDelivered = true;
     }
 
