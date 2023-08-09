@@ -19,8 +19,6 @@ interface ITurnstile {
  */
 abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
     uint public rewardPerTokenStored; // Accumulator
-    uint public rewardAmountDelivered;
-    bool public rewardsDelivered;
 
     uint public immutable csrID;
     bool public immutable usingFee;
@@ -62,27 +60,11 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
         return _rewardEligibleBalances[account];
     }
 
-    function rewardPerToken() public view returns (uint) {
-        if (_totalRewardEligibleSupply == 0) {
-            return rewardPerTokenStored;
-        }
-
-        if (rewardsDelivered) {
-            // This condition is only true briefly between reward delivery and the next transfer or reward delivery call (could happen if only approves occur)
-            // Perhaps the new accumulator value can be updated once on delivery and this function is simplified to just return the accumulator 
-            // Then this function can be eliminated in favor of just referencing the accumulator
-            return rewardPerTokenStored + (rewardAmountDelivered * 1e18 / _totalRewardEligibleSupply);
-        } else {
-            return rewardPerTokenStored;
-        }
-
-    }
-
     function earned(address account) public view returns (uint) {
         return rewards[account] +
         (
             _rewardEligibleBalances[account]
-            * (rewardPerToken() - userRewardPerTokenPaid[account])
+            * (rewardPerTokenStored - userRewardPerTokenPaid[account])
             / 1e18
         );
     }
@@ -128,27 +110,12 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
     }
 
     function _updateReward(address account) private {
-        // Users would not need to be responsible for updating the accumulator then
-        // It would update only when rewards are added
-        // This function would just update a users {reward} entry and their stored accumulator value
-        rewardPerTokenStored = rewardPerToken();
-        if (rewardsDelivered) rewardsDelivered = false;
         rewards[account] = earned(account);
         userRewardPerTokenPaid[account] = rewardPerTokenStored;
     }
 
     function _registerRewardDelivery(uint rewardAmount) private {
-        // Is this absolutely needed?
-        // I think the reality of this line is that {rewardPerToken} is always returning the current value of {rewardPerTokenStored}
-        // Possibly, if withdraw from turnstile is called twice before update is called, then the wrong reward delivery amount would be stored, would overwrite it
-        // 
-        // What can possibly be done instead is to run the accumulator update here
-        // Wouldn't need to store rewardAmountDelivered either
-        rewardPerTokenStored = rewardPerToken();
-        rewardAmountDelivered = rewardAmount;
-        // Possible to do away with flag and do update logic here?
-        // Do we have to wait until next block/transfer?
-        rewardsDelivered = true;
+        rewardPerTokenStored += rewardAmount * 1e18 / _totalRewardEligibleSupply;
     }
 
     /// MUTABLE EXTERNAL FUNCTIONS
@@ -165,7 +132,6 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
 
     /// @notice Public function for collecting and distributing contract accumulated CSR
     function withdrawFromTurnstile() external nonReentrant {
-        require(msg.sender == tx.origin, "CsrRewardsERC20: Only EOA can withdraw from turnstile");
         uint amountToClaim = turnstileBalance();
         require(amountToClaim > 0, "CsrRewardsERC20: No CSR to claim");
 
