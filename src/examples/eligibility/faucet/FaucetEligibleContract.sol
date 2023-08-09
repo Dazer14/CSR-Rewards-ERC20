@@ -15,6 +15,8 @@ interface IEligibilityFaucet {
     function drip() external;
 }
 
+/// @dev This demonstates a custom contract that can hold CsrRewardERC20 tokens and be reward eligible
+/// The eligibility faucet will have to be setup before then calling drip will make this contract eligible
 contract FaucetEligibleContract {
     address private immutable _csrRewardsToken;
     address public immutable owner;

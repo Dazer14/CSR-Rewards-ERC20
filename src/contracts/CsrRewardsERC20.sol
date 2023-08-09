@@ -19,8 +19,12 @@ interface Turnstile {
  */
 abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
     uint public rewardPerTokenStored; // Accumulator
-    bool private _waitingToProcessDelivery; // This is true after delivery and until the next transfer
-    uint private _rewardAmountDelivered;
+    bool public rewardsDelivered;
+    uint public rewardAmountDelivered;
+
+    uint public immutable csrID;
+    bool public immutable usingFee;
+    uint8 public immutable feeBasisPoints;
 
     mapping(address => uint) public userRewardPerTokenPaid;
     mapping(address => uint) public rewards;
@@ -28,10 +32,6 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
     uint private _totalRewardEligibleSupply;
     mapping(address => uint) private _rewardEligibleBalances;
     mapping(address => bool) private _rewardEligibleAddress;
-
-    uint public immutable csrID;
-    bool public immutable usingFee;
-    uint8 public immutable feeBasisPoints;
 
     Turnstile public turnstile = Turnstile(0xEcf044C5B4b867CFda001101c617eCd347095B44);
 
@@ -67,8 +67,8 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
             return rewardPerTokenStored;
         }
 
-        if (_waitingToProcessDelivery) {
-            return rewardPerTokenStored + (_rewardAmountDelivered * 1e18 / _totalRewardEligibleSupply);
+        if (rewardsDelivered) {
+            return rewardPerTokenStored + (rewardAmountDelivered * 1e18 / _totalRewardEligibleSupply);
         } else {
             return rewardPerTokenStored;
         }
@@ -126,15 +126,15 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
 
     function _updateReward(address account) private {
         rewardPerTokenStored = rewardPerToken();
-        if (_waitingToProcessDelivery) _waitingToProcessDelivery = false;
+        if (rewardsDelivered) rewardsDelivered = false;
         rewards[account] = earned(account);
         userRewardPerTokenPaid[account] = rewardPerTokenStored;
     }
 
     function _registerRewardDelivery(uint rewardAmount) private {
         rewardPerTokenStored = rewardPerToken();
-        _rewardAmountDelivered = rewardAmount;
-        _waitingToProcessDelivery = true;
+        rewardAmountDelivered = rewardAmount;
+        rewardsDelivered = true;
     }
 
     /// MUTABLE EXTERNAL FUNCTIONS
