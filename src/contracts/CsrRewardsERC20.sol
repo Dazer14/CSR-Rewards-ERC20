@@ -6,10 +6,10 @@ import "lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 import "lib/openzeppelin-contracts/contracts/security/ReentrancyGuard.sol";
 // import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-interface Turnstile {
+interface ITurnstile {
     function register(address) external returns (uint);
     function balances(uint) external view returns (uint);
-    function withdraw(uint _tokenId, address payable _recipient, uint _amount) external returns (uint);
+    function withdraw(uint, address payable, uint) external returns (uint);
 }
 
 /**
@@ -19,8 +19,8 @@ interface Turnstile {
  */
 abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
     uint public rewardPerTokenStored; // Accumulator
-    bool public rewardsDelivered;
     uint public rewardAmountDelivered;
+    bool public rewardsDelivered;
 
     uint public immutable csrID;
     bool public immutable usingFee;
@@ -33,7 +33,7 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
     mapping(address => uint) private _rewardEligibleBalances;
     mapping(address => bool) private _rewardEligibleAddress;
 
-    Turnstile public turnstile = Turnstile(0xEcf044C5B4b867CFda001101c617eCd347095B44);
+    ITurnstile public turnstile = ITurnstile(0xEcf044C5B4b867CFda001101c617eCd347095B44);
 
     constructor(
         bool _usingFee,

@@ -1,16 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// Probably the easist way to do this
-// Setup a simple faucet
-// Public function that sends a single wei of the CsrRewardsToken to any caller
-// Can fetch remainder
-// Easy to call in constructor
-interface IERC20 {
-    function transfer(address to, uint256 amount) external returns (bool);
-    function balanceOf(address account) external view returns (uint256);
-}
+// import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
+/// @dev Simple faucet for making contracts CsrRewardsERC20 reward eligible
+/// USE: Deploy with token address and send a small amount of tokens in
 contract EligibilityFaucet {
     IERC20 public immutable csrRewardsToken;
 
@@ -22,6 +17,7 @@ contract EligibilityFaucet {
         return csrRewardsToken.balanceOf(address(this));
     }
 
+    /// @dev Call in contract constructor
     function drip() external {
         require(tokenBalance() > 0, "EligibilityFaucet: Out of tokens");
         csrRewardsToken.transfer(msg.sender, 1);
