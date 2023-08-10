@@ -13,7 +13,7 @@ contract DeflationTokenExample is ERC20, CsrRewardsERC20 {
         string memory _name, 
         string memory _symbol,
         bool _usingFee,
-        uint8 _feeBasisPoints,
+        uint16 _feeBasisPoints,
         uint _deflationBasisPoints,
         uint _supply
     ) ERC20(_name, _symbol) CsrRewardsERC20(_usingFee, _feeBasisPoints) {

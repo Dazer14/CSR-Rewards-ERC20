@@ -18,34 +18,34 @@ interface ITurnstile {
  * Logic is borrowed and modified from Synthetix StakingRewards.sol
  */
 abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
-    uint public rewardPerTokenStored; // Accumulator
+    uint public rewardPerTokenStored; // Global Accumulator
 
     uint public immutable csrID;
     bool public immutable usingWithdrawCallFee;
-    uint8 public immutable feeBasisPoints;
+    uint16 public immutable withdrawCallFeeBasisPoints;
 
-    mapping(address => uint) public userRewardPerTokenPaid;
+    mapping(address => uint) public userRewardPerTokenPaid; // Account Accumulator
     mapping(address => uint) public rewards;
 
     uint private _totalRewardEligibleSupply;
     mapping(address => uint) private _rewardEligibleBalances;
     mapping(address => bool) private _rewardEligibleAddress;
 
-    ITurnstile public turnstile = ITurnstile(0xEcf044C5B4b867CFda001101c617eCd347095B44);
+    ITurnstile public constant TURNSTILE = ITurnstile(0xEcf044C5B4b867CFda001101c617eCd347095B44);
 
     constructor(
         bool _usingWithdrawCallFee,
-        uint8 _feeBasisPoints
+        uint16 _withdrawCallFeeBasisPoints
     ) {
         usingWithdrawCallFee = _usingWithdrawCallFee;
-        feeBasisPoints = _feeBasisPoints;
+        withdrawCallFeeBasisPoints = _withdrawCallFeeBasisPoints;
 
-        csrID = turnstile.register(address(this));
+        csrID = TURNSTILE.register(address(this));
     }
 
     receive() external payable {
         require(
-            msg.sender == address(turnstile), 
+            msg.sender == address(TURNSTILE), 
             "CsrRewardsERC20: Only turnstile transfers will be processed for rewards"
         );
     }
@@ -70,7 +70,7 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
     }
 
     function turnstileBalance() public view returns (uint) {
-        return turnstile.balances(csrID);
+        return TURNSTILE.balances(csrID);
     }
 
     /// INTERNAL FUNCTIONS
@@ -118,13 +118,14 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
         if (userRewardPerTokenPaid[account] <= rewardPerTokenStored) {
             return rewardPerTokenStored - userRewardPerTokenPaid[account];
         } else {
-            // Overflow result is stored in global accumulator
+            /// @dev Overflow result is stored in global accumulator
+            /// Account accumulator value will only be greater than global accumulator when overflow has occurred
             return type(uint).max - userRewardPerTokenPaid[account] + rewardPerTokenStored;
         }
     }
 
     function _registerRewardDelivery(uint rewardAmount) private {
-        // Accumulator should overflow
+        /// @dev Accumulator should overflow
         unchecked { rewardPerTokenStored += rewardAmount * 1e18 / _totalRewardEligibleSupply; }
     }
 
@@ -145,10 +146,10 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
         uint amountToClaim = turnstileBalance();
         require(amountToClaim > 0, "CsrRewardsERC20: No CSR to claim");
 
-        turnstile.withdraw(csrID, payable(address(this)), amountToClaim);
+        TURNSTILE.withdraw(csrID, payable(address(this)), amountToClaim);
 
         if (usingWithdrawCallFee) {
-            uint feeAmount = amountToClaim * feeBasisPoints / 10000;
+            uint feeAmount = amountToClaim * withdrawCallFeeBasisPoints / 10000;
             _registerRewardDelivery(amountToClaim - feeAmount);
             _transferCANTO(msg.sender, feeAmount);
         } else {
