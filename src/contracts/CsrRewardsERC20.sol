@@ -21,7 +21,7 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
     uint public rewardPerTokenStored; // Accumulator
 
     uint public immutable csrID;
-    bool public immutable usingFee;
+    bool public immutable usingWithdrawCallFee;
     uint8 public immutable feeBasisPoints;
 
     mapping(address => uint) public userRewardPerTokenPaid;
@@ -34,10 +34,10 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
     ITurnstile public turnstile = ITurnstile(0xEcf044C5B4b867CFda001101c617eCd347095B44);
 
     constructor(
-        bool _usingFee,
+        bool _usingWithdrawCallFee,
         uint8 _feeBasisPoints
     ) {
-        usingFee = _usingFee;
+        usingWithdrawCallFee = _usingWithdrawCallFee;
         feeBasisPoints = _feeBasisPoints;
 
         csrID = turnstile.register(address(this));
@@ -64,7 +64,7 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
         return rewards[account] +
         (
             _rewardEligibleBalances[account]
-            * (rewardPerTokenStored - userRewardPerTokenPaid[account])
+            * _getAccountAccumulatorDifference(account)
             / 1e18
         );
     }
@@ -114,8 +114,18 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
         userRewardPerTokenPaid[account] = rewardPerTokenStored;
     }
 
+    function _getAccountAccumulatorDifference(address account) private view returns (uint) {
+        if (userRewardPerTokenPaid[account] <= rewardPerTokenStored) {
+            return rewardPerTokenStored - userRewardPerTokenPaid[account];
+        } else {
+            // Overflow result is stored in global accumulator
+            return type(uint).max - userRewardPerTokenPaid[account] + rewardPerTokenStored;
+        }
+    }
+
     function _registerRewardDelivery(uint rewardAmount) private {
-        rewardPerTokenStored += rewardAmount * 1e18 / _totalRewardEligibleSupply;
+        // Accumulator should overflow
+        unchecked { rewardPerTokenStored += rewardAmount * 1e18 / _totalRewardEligibleSupply; }
     }
 
     /// MUTABLE EXTERNAL FUNCTIONS
@@ -137,7 +147,7 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
 
         turnstile.withdraw(csrID, payable(address(this)), amountToClaim);
 
-        if (usingFee) {
+        if (usingWithdrawCallFee) {
             uint feeAmount = amountToClaim * feeBasisPoints / 10000;
             _registerRewardDelivery(amountToClaim - feeAmount);
             _transferCANTO(msg.sender, feeAmount);
