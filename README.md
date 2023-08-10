@@ -6,8 +6,8 @@
 - Auto-whitelist for new contract accounts (see below) 
 - CANTO rewards can be claimed at any time
 - Contract is ownerless
-- Optional fee paid for turnstile withdraw call, keeps collection + distribution ongoing and automatic
-- Testing/auditing still needed, not mainnet ready
+- Optional fee given to turnstile withdraw call, keeps collection + distribution ongoing
+- Unaudited, not mainnet ready
 
 ### Reward Eligible Contracts
 - New contracts that receive any amount of this token either before or during their construction become reward eligible
