@@ -25,7 +25,7 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
     uint16 public immutable withdrawCallFeeBasisPoints;
 
     mapping(address => uint) public userRewardPerTokenPaid; // Account Accumulator
-    mapping(address => uint) public rewards;
+    mapping(address => uint) public rewardsEarned;
 
     uint private _totalRewardEligibleSupply;
     mapping(address => uint) private _rewardEligibleBalances;
@@ -61,7 +61,7 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
     }
 
     function earned(address account) public view returns (uint) {
-        return rewards[account] +
+        return rewardsEarned[account] +
         (
             _rewardEligibleBalances[account]
             * _getAccountAccumulatorDifference(account)
@@ -81,12 +81,10 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
     }
 
     function _afterTokenTransfer(address from, address to, uint amount) internal virtual override {
-        /**
-         * @dev First time transfer to address with code size 0 will register as reward eligible
-         * Contract addresses will have code size 0 before and during deploy
-         * Any method that sends this token to that address will make the contract reward eligible
-         * NB Self-minting in constructor makes this contract reward eligible
-         */
+        /// @dev First time transfer to address with code size 0 will register as reward eligible
+        /// Contract addresses will have code size 0 before and during deploy
+        /// Any method that sends this token to that address will make the contract reward eligible
+        /// NB Self-minting in constructor makes this contract reward eligible
         if (_rewardEligibleAddress[to]) {
             _increaseRewardEligibleBalance(to, amount);
         } else {
@@ -110,7 +108,7 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
     }
 
     function _updateReward(address account) private {
-        rewards[account] = earned(account);
+        rewardsEarned[account] = earned(account);
         userRewardPerTokenPaid[account] = rewardPerTokenStored;
     }
 
@@ -120,6 +118,7 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
         } else {
             /// @dev Overflow result is stored in global accumulator
             /// Account accumulator value will only be greater than global accumulator when overflow has occurred
+            /// So have to return the 'difference' wrapping around maximum uint256 value
             return type(uint).max - userRewardPerTokenPaid[account] + rewardPerTokenStored;
         }
     }
@@ -134,9 +133,9 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
     /// @notice Token holder function for claiming CSR rewards
     function getReward() external nonReentrant {
         _updateReward(msg.sender);
-        uint reward = rewards[msg.sender];
+        uint reward = rewardsEarned[msg.sender];
         if (reward > 0) {
-            rewards[msg.sender] = 0;
+            rewardsEarned[msg.sender] = 0;
             _transferCANTO(msg.sender, reward);
         }
     }
