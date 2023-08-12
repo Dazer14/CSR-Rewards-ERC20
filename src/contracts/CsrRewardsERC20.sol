@@ -33,6 +33,9 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
 
     ITurnstile public constant TURNSTILE = ITurnstile(0xEcf044C5B4b867CFda001101c617eCd347095B44);
 
+    event RewardsDelivered(uint amount);
+    event RewardsClaimed(address indexed account, uint amount);
+
     constructor(
         bool _usingWithdrawCallFee,
         uint16 _withdrawCallFeeBasisPoints
@@ -126,6 +129,8 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
     function _registerRewardDelivery(uint rewardAmount) private {
         /// @dev Accumulator should overflow
         unchecked { rewardPerTokenStored += rewardAmount * 1e18 / _totalRewardEligibleSupply; }
+
+        emit RewardsDelivered(rewardAmount);
     }
 
     /// MUTABLE EXTERNAL FUNCTIONS
@@ -137,6 +142,8 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
         if (reward > 0) {
             rewardsEarned[msg.sender] = 0;
             _transferCANTO(msg.sender, reward);
+
+            emit RewardsClaimed(msg.sender, reward);
         }
     }
 
