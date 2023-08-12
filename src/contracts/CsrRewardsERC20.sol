@@ -2,9 +2,9 @@
 pragma solidity ^0.8.0;
 
 // import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
+import "openzeppelin/token/ERC20/ERC20.sol";
 // import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "lib/openzeppelin-contracts/contracts/security/ReentrancyGuard.sol";
+import "openzeppelin/security/ReentrancyGuard.sol";
 
 interface ITurnstile {
     function register(address) external returns (uint);

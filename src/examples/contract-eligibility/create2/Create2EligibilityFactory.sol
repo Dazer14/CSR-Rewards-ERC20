@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 // import "@openzeppelin/contracts/utils/Create2.sol";
-import "lib/openzeppelin-contracts/contracts/utils/Create2.sol";
+import "openzeppelin/utils/Create2.sol";
 
 import "./Create2EligibleExample.sol";
 
