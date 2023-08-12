@@ -6,7 +6,7 @@ import "openzeppelin/token/ERC20/ERC20.sol";
 // import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "openzeppelin/security/ReentrancyGuard.sol";
 
-interface ITurnstile_T {
+interface I_Turnstile {
     function register(address) external returns (uint);
     function balances(uint) external view returns (uint);
     function withdraw(uint, address payable, uint) external returns (uint);
@@ -31,7 +31,7 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard {
     mapping(address => uint) private _rewardEligibleBalances;
     mapping(address => bool) private _rewardEligibleAddress;
 
-    ITurnstile_T public constant TURNSTILE = ITurnstile_T(0xEcf044C5B4b867CFda001101c617eCd347095B44);
+    I_Turnstile public constant TURNSTILE = I_Turnstile(0xEcf044C5B4b867CFda001101c617eCd347095B44);
 
     event RewardsDelivered(uint amount);
     event RewardsClaimed(address indexed account, uint amount);
