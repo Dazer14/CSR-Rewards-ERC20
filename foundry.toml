@@ -1,5 +1,5 @@
 [profile.default]
-solc-version = "0.8.0"
+solc-version = "0.8.1"
 src = "src"
 out = "out"
 libs = ["lib"]
