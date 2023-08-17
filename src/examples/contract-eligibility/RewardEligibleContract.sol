@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "openzeppelin/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "../../contracts/ICsrRewardsERC20.sol";
 
@@ -17,11 +16,11 @@ abstract contract RewardEligibleContract {
 
     /// VIEW
 
-    function rewardAmountEarned() public view returns (uint) {
+    function rewardAmountEarned() public view returns (uint256) {
         return ICsrRewardsERC20(csrRewardsToken).earned(address(this));
     }
 
-    function tokenBalance() public view returns (uint) {
+    function tokenBalance() public view returns (uint256) {
         return IERC20(csrRewardsToken).balanceOf(address(this));
     }
 
@@ -29,12 +28,11 @@ abstract contract RewardEligibleContract {
 
     function getReward(address receiver) public virtual {
         ICsrRewardsERC20(csrRewardsToken).getReward();
-        (bool success, ) = payable(receiver).call{value: address(this).balance}("");
+        (bool success,) = payable(receiver).call{value: address(this).balance}("");
         require(success, "Unable to send value, recipient may have reverted");
     }
 
     function retrieveTokens(address receiver) public virtual {
         IERC20(csrRewardsToken).transfer(receiver, tokenBalance());
     }
-
 }

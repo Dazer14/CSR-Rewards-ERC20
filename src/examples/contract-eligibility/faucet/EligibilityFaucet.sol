@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "openzeppelin/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /// @dev Simple faucet for making contracts CsrRewardsERC20 reward eligible
 /// USE: Deploy with token address and send a small amount of tokens in
@@ -14,7 +13,7 @@ contract EligibilityFaucet {
         csrRewardsToken = IERC20(_csrRewardsToken);
     }
 
-    function tokenBalance() public view returns (uint) {
+    function tokenBalance() public view returns (uint256) {
         return csrRewardsToken.balanceOf(address(this));
     }
 

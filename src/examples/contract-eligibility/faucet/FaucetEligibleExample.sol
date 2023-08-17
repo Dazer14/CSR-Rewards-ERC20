@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// import "@openzeppelin/contracts/access/Ownable.sol";
-import "openzeppelin/access/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "../RewardEligibleContract.sol";
 
@@ -14,10 +13,7 @@ interface IEligibilityFaucet {
 /// The faucet will need to be setup
 /// Calling drip will make this contract eligible by transferring in 1 wei
 contract FaucetEligibleExample is RewardEligibleContract, Ownable {
-    constructor(
-        address _csrRewardsToken, 
-        address _faucet
-    ) RewardEligibleContract(_csrRewardsToken) {
+    constructor(address _csrRewardsToken, address _faucet) RewardEligibleContract(_csrRewardsToken) {
         IEligibilityFaucet(_faucet).drip(); // Made eligible
     }
 
@@ -28,5 +24,4 @@ contract FaucetEligibleExample is RewardEligibleContract, Ownable {
     function retrieveTokens(address receiver) public override onlyOwner {
         super.retrieveTokens(receiver);
     }
-
 }

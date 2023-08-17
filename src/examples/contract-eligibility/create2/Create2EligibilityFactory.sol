@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// import "@openzeppelin/contracts/utils/Create2.sol";
-import "openzeppelin/utils/Create2.sol";
+import "@openzeppelin/contracts/utils/Create2.sol";
 
 import "./Create2EligibleExample.sol";
 
 /// @dev Have to send some tokens to this contract
 /// Use Create2 to calculate contract deploy address
 /// Tokens are transferred there to make the eventual contract address reward eligible
-/// Create2 used to deploy 
+/// Create2 used to deploy
 contract Create2EligibilityFactory {
     IERC20 public immutable csrRewardsToken;
 
@@ -19,7 +18,7 @@ contract Create2EligibilityFactory {
 
     function makeAddressEligibleAndDeploy(bytes32 salt) external {
         bytes memory bytecode = abi.encodePacked(
-            type(Create2EligibleExample).creationCode, 
+            type(Create2EligibleExample).creationCode,
             abi.encode(address(csrRewardsToken)),
             abi.encode(address(msg.sender)) // Owner of deployed contract
         );
@@ -30,8 +29,7 @@ contract Create2EligibilityFactory {
     }
 
     function retrieveTokens(address receiver) external {
-        uint balance = csrRewardsToken.balanceOf(address(this));
+        uint256 balance = csrRewardsToken.balanceOf(address(this));
         csrRewardsToken.transfer(receiver, balance);
     }
-
 }
