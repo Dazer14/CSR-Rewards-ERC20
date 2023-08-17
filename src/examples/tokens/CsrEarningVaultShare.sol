@@ -9,7 +9,12 @@ import "openzeppelin/token/ERC20/extensions/ERC4626.sol";
 import "../../contracts/CsrRewardsERC20.sol";
 
 /// @dev These vault shares would earn CSR from the vault shares being minted, burned or used
-/// @dev Deposit contracts made eligible could further compound these shares
+/// If these shares are custodied by a contract it will need to made eligible to earn CSR
+/// Deposit contracts made eligible could further compound these shares
+/// NB This would be used for non CsrRewardERC20 tokens
+/// If wanting to deposit CsrRewardERC20 token,
+///     consider assigning to that tokens turnstile ID and compounding {_depositToken}
+///     - Will leave in another example
 contract CsrEarningVaultShare is ERC20, ERC4626, CsrRewardsERC20 {
     constructor(
         string memory _vaultName,
