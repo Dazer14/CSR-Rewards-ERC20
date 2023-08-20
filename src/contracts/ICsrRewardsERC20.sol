@@ -6,6 +6,7 @@ interface ICsrRewardsERC20 {
     function rewardEligibleBalanceOf(address account) external view returns (uint256);
     function turnstileBalance() external view returns (uint256);
     function earned(address account) external view returns (uint256);
+    function csrID() external returns (uint256);
     function getReward() external;
     function withdrawFromTurnstile() external;
 }
