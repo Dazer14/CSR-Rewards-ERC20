@@ -1,18 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
-
-import "../../contracts/CsrRewardsERC20.sol";
+import {ERC4626, ERC20, IERC20} from "lib/openzeppelin-contracts/contracts/token/ERC20/extensions/ERC4626.sol";
+import {CsrRewardsERC20} from "../../contracts/CsrRewardsERC20.sol";
 
 /// @dev These vault shares would earn CSR from the vault shares being minted, burned or used
-/// If these shares are custodied by a contract it will need to made eligible to earn CSR
-/// Deposit contracts made eligible could further compound these shares
-/// NB This would be used for non CsrRewardERC20 tokens
-/// If wanting to deposit CsrRewardERC20 token,
-///     consider assigning to that tokens turnstile ID and compounding {_depositToken}
-///     - Will leave in another example
+/// This amounts to an unneccessarily complex wrapper and should be deprecated, example only
 contract CsrEarningVaultShare is ERC20, ERC4626, CsrRewardsERC20 {
     constructor(
         string memory _vaultName,

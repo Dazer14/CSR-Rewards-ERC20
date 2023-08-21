@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
-import "../../contracts/ICsrRewardsERC20.sol";
+import {IERC20} from "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+import {ICsrRewardsERC20} from "../../contracts/ICsrRewardsERC20.sol";
 
 abstract contract RewardEligibleContract {
     address public immutable csrRewardsToken;

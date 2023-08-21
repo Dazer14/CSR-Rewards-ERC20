@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
-
-import "../../contracts/ICsrRewardsERC20.sol";
-import "../../contracts/TurnstileInterface.sol";
+import {ERC4626, ERC20, IERC20} from "lib/openzeppelin-contracts/contracts/token/ERC20/extensions/ERC4626.sol";
+import {ICsrRewardsERC20} from "../../contracts/ICsrRewardsERC20.sol";
+import {TurnstileInterface} from "../../contracts/TurnstileInterface.sol";
 
 /// @dev CsrRewardsERC20 token compounder
 /// This contract custodies CsrRewardsERC20 token aggregate and converts CANTO earned to CsrRewardsERC20

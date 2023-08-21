@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-
-import "../../contracts/CsrRewardsERC20.sol";
+import {ERC20} from "lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
+import {CsrRewardsERC20} from "../../contracts/CsrRewardsERC20.sol";
 
 contract RevenueSplit is ERC20, CsrRewardsERC20 {
     uint256 public revenueBasisPoints;
