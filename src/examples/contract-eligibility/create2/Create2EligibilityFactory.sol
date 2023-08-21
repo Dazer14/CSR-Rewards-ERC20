@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Create2} from "lib/openzeppelin-contracts/contracts/utils/Create2.sol";
-import {IERC20} from "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+import {Create2} from "@openzeppelin/contracts/utils/Create2.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Create2EligibleExample} from "./Create2EligibleExample.sol";
 
 /// https://ethereum.stackexchange.com/questions/9142/how-to-convert-a-string-to-bytes32
