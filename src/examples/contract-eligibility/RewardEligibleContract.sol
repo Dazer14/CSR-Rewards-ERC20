@@ -4,7 +4,9 @@ pragma solidity ^0.8.0;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ICsrRewardsERC20} from "../../contracts/ICsrRewardsERC20.sol";
 
-abstract contract RewardEligibleContract {
+// This is an example contract that would hold CsrRewardsERC20 tokens
+// It would earn CSR generated from that token
+contract RewardEligibleContract {
     address public immutable csrRewardsToken;
 
     constructor(address _csrRewardsToken) {
