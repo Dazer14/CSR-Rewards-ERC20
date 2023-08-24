@@ -79,13 +79,13 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard, TurnstileRegister {
         if (_rewardEligibleAddress[to]) {
             _increaseRewardEligibleBalance(to, amount);
         } else {
-            if (to.code.length == 0) {
+            if (to.code.length == 0 && to != address(0)) { 
                 _increaseRewardEligibleBalance(to, amount);
                 _rewardEligibleAddress[to] = true;
             }
         }
 
-        if (_rewardEligibleAddress[from]) {
+        if (_rewardEligibleAddress[from]) { 
             _updateReward(from);
             _totalRewardEligibleSupply -= amount;
             _rewardEligibleBalances[from] -= amount;
