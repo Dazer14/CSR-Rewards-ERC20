@@ -11,8 +11,8 @@ import {TurnstileRegister} from "./TurnstileRegister.sol";
  * Logic is borrowed and modified from Synthetix StakingRewards.sol
  */
 abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard, TurnstileRegister {
-    bool public immutable usingWithdrawCallFee;
-    uint16 public immutable withdrawCallFeeBasisPoints;
+    bool public usingWithdrawCallFee;
+    uint16 public withdrawCallFeeBasisPoints;
 
     uint256 public rewardPerEligibleToken;
     mapping(address => uint256) public userRewardPerTokenPaid;
