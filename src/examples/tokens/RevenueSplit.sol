@@ -11,12 +11,11 @@ contract RevenueSplit is ERC20, CsrRewardsERC20 {
     constructor(
         string memory _name,
         string memory _symbol,
-        bool _usingWithdrawCallFee,
         uint16 _withdrawCallFeeBasisPoints,
         uint256 _revenueBasisPoints,
         address _revenueWallet,
         uint256 _supply
-    ) ERC20(_name, _symbol) CsrRewardsERC20(_usingWithdrawCallFee, _withdrawCallFeeBasisPoints) {
+    ) ERC20(_name, _symbol) CsrRewardsERC20(_withdrawCallFeeBasisPoints) {
         require((_revenueBasisPoints <= _BPS), "Revenue basis points must be less than 10000");
         revenueBasisPoints = _revenueBasisPoints;
         revenueWallet = _revenueWallet;
@@ -37,7 +36,7 @@ contract RevenueSplit is ERC20, CsrRewardsERC20 {
         uint256 revenueAmount = amountToClaim * revenueBasisPoints / _BPS;
         _transferCANTO(revenueWallet, revenueAmount);
 
-        if (usingWithdrawCallFee) {
+        if (withdrawCallFeeBasisPoints != 0) {
             uint256 withdrawCallfeeAmount = amountToClaim * withdrawCallFeeBasisPoints / _BPS;
             _registerRewardDelivery(amountToClaim - revenueAmount - withdrawCallfeeAmount);
             _transferCANTO(msg.sender, withdrawCallfeeAmount);

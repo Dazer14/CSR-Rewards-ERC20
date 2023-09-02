@@ -14,9 +14,8 @@ contract TestToken is ERC20, CsrRewardsERC20 {
     constructor(
         string memory _name, 
         string memory _symbol,
-        bool _usingFee,
         uint8 _feeBasisPoints
-    ) ERC20(_name, _symbol) CsrRewardsERC20(_usingFee, _feeBasisPoints) {}
+    ) ERC20(_name, _symbol) CsrRewardsERC20(_feeBasisPoints) {}
 
     function _afterTokenTransfer(address from, address to, uint amount) 
         internal 
@@ -36,7 +35,7 @@ contract CsrRewardsERC20Test is Test {
     address _user3 = address(0x3);
 
     function setUp() public {
-        _token = new TestToken("Test", "TEST", true, 100);
+        _token = new TestToken("Test", "TEST", 100);
         deal(address(_token), _origin, 3000, true);
         console.log(_token.turnstileBalance());
         vm.startPrank(_origin);

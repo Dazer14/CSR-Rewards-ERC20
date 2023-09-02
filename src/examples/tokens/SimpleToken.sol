@@ -5,9 +5,9 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {CsrRewardsERC20} from "../../contracts/CsrRewardsERC20.sol";
 
 contract SimpleToken is ERC20, CsrRewardsERC20 {
-    constructor(string memory _name, string memory _symbol, bool _usingFee, uint16 _feeBasisPoints, uint256 _supply)
+    constructor(string memory _name, string memory _symbol, uint16 _withdrawFeeBasisPoints, uint256 _supply)
         ERC20(_name, _symbol)
-        CsrRewardsERC20(_usingFee, _feeBasisPoints)
+        CsrRewardsERC20(_withdrawFeeBasisPoints)
     {
         _mint(msg.sender, _supply);
     }
