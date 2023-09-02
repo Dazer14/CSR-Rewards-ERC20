@@ -1,19 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import {ERC20} from "lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
+import {ReentrancyGuard} from "lib/openzeppelin-contracts/contracts/security/ReentrancyGuard.sol";
 import {TurnstileRegister} from "./TurnstileRegister.sol";
 
 /**
  * @title CSR Reward Accumulating Token
  * Distributes all CSR earned to reward eligible holders
  * Logic is borrowed and modified from Synthetix StakingRewards.sol
+ *
+ * It might make sense to enforce certain supply sizes and decimal amounts
  */
 abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard, TurnstileRegister {
-    bool public usingWithdrawCallFee;
-    uint16 public withdrawCallFeeBasisPoints;
-
     uint256 public rewardPerEligibleToken;
     mapping(address => uint256) public userRewardPerTokenPaid;
     mapping(address => uint256) public rewardsEarned;
@@ -22,24 +21,22 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard, TurnstileRegister {
     mapping(address => uint256) private _rewardEligibleBalances;
     mapping(address => bool) private _rewardEligibleAddress;
 
+    uint16 public withdrawCallFeeBasisPoints;
     uint16 internal constant _BPS = 10000;
 
     event RewardsDelivered(uint256 amount);
     event RewardsClaimed(address indexed account, uint256 amount);
 
     constructor(
-        bool _usingWithdrawCallFee, 
         uint16 _withdrawCallFeeBasisPoints
     ) TurnstileRegister() {
-        usingWithdrawCallFee = _usingWithdrawCallFee;
         withdrawCallFeeBasisPoints = _withdrawCallFeeBasisPoints;
     }
 
     receive() external payable {
-        require(
-            msg.sender == address(TURNSTILE), "CsrRewardsERC20: Only turnstile transfers will be processed for rewards"
-        );
-        // _registerRewardDelivery(msg.value);
+        if (msg.sender != address(TURNSTILE)) {
+           _registerRewardDelivery(msg.value); 
+        }
     }
 
     /// VIEW FUNCTIONS
@@ -75,7 +72,7 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard, TurnstileRegister {
         /// @dev First time transfer to address with code size 0 will register as reward eligible
         /// Contract addresses will have code size 0 before and during deploy
         /// Any method that sends this token to that address will make the contract reward eligible
-        /// NB Self-minting in constructor makes this contract reward eligible
+        /// Self-minting in constructor makes this contract reward eligible
         if (_rewardEligibleAddress[to]) {
             _increaseRewardEligibleBalance(to, amount);
         } else {
@@ -135,7 +132,7 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard, TurnstileRegister {
 
         TURNSTILE.withdraw(csrID, payable(address(this)), amountToClaim);
 
-        if (usingWithdrawCallFee) {
+        if (withdrawCallFeeBasisPoints != 0) {
             uint256 feeAmount = _withdrawFeeAmount(amountToClaim);
             _registerRewardDelivery(amountToClaim - feeAmount);
             _transferCANTO(msg.sender, feeAmount);
@@ -144,3 +141,4 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard, TurnstileRegister {
         }
     }
 }
+

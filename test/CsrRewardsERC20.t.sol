@@ -5,8 +5,8 @@ import "forge-std/Test.sol";
 import "forge-std/Vm.sol";
 import "forge-std/console2.sol";
 
-import "src/contracts/CsrRewardsERC20.sol";
-import "lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
+import {CsrRewardsERC20, ERC20} from "src/contracts/CsrRewardsERC20.sol";
+// import "lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 
 // forge test --fork-url https://canto.gravitychain.io -vv
 
@@ -38,8 +38,8 @@ contract CsrRewardsERC20Test is Test {
     function setUp() public {
         _token = new TestToken("Test", "TEST", true, 100);
         deal(address(_token), _origin, 3000, true);
-        vm.startPrank(_origin);
         console.log(_token.turnstileBalance());
+        vm.startPrank(_origin);
         _token.transfer(_user1, 1000);
         _token.transfer(_user2, 1000);
         _token.transfer(_user3, 1000);
@@ -47,8 +47,8 @@ contract CsrRewardsERC20Test is Test {
     }
 
     function testUserHasBalance() external {
-        vm.roll(block.number + 1);
-        console.log(_token.turnstileBalance());
+        // vm.roll(block.number + 1);
+        // console.log(_token.turnstileBalance());
         assertEq(_token.balanceOf(_user1), 1000);
         assertEq(_token.rewardEligibleBalanceOf(_user1), 1000);
     }
