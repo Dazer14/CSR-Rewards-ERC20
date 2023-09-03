@@ -7,8 +7,7 @@ import "forge-std/console.sol";
 
 import {CsrRewardsERC20, ERC20} from "src/contracts/CsrRewardsERC20.sol";
 import {TurnstileInterface} from "src/contracts/TurnstileInterface.sol";
-
-// forge test --fork-url https://canto.gravitychain.io -vv
+import {RPC} from "src/utils/RPC.sol";
 
 interface TurnstileOwnerControls {
     function distributeFees(uint256 _tokenId) external payable;
@@ -29,7 +28,7 @@ contract TestToken is ERC20, CsrRewardsERC20 {
     }
 }
 
-contract CsrRewardsERC20Test is Test {
+contract CsrRewardsERC20Test is Test, RPC {
     TestToken public token;
 
     address public turnstile = address(0xEcf044C5B4b867CFda001101c617eCd347095B44);
@@ -45,13 +44,14 @@ contract CsrRewardsERC20Test is Test {
     uint256 public userBalance = totalSupply / 4;
 
     function setUp() public {
+        vm.createSelectFork(RPC.MAINNET_RPC_URL);
         // Testing with no withdraw call fee
         token = new TestToken("Test", "TEST", 0);
 
-        // Will be doing manual fee distribution amounts in tests, keep max amount available
         vm.deal(turnstileOwner, type(uint256).max);
 
-        // Deal then transfer to make sure hook is run
+        // Deal then transfer to make sure after transfer hook is run
+        // Only users will have an eligible account 
         deal(address(token), origin, totalSupply, true);
         vm.startPrank(origin);
         token.transfer(user1, userBalance);
@@ -64,6 +64,8 @@ contract CsrRewardsERC20Test is Test {
     // Helpers
 
     function _distributeAmount(uint256 amount) internal {
+        // Mocking a wide range of reward amounts
+        vm.assume(amount < 10000e18 && amount > 10000);
         vm.startPrank(turnstileOwner);
         TurnstileOwnerControls(turnstile).distributeFees{value:amount}(token.csrID());
         vm.stopPrank();
@@ -76,14 +78,12 @@ contract CsrRewardsERC20Test is Test {
         assertEq(token.rewardEligibleBalanceOf(user1), userBalance);
     }
 
-    function testTurnstileBalance() external {
-        uint256 amountToDistribute = 10000;
+    function testTurnstileBalance(uint256 amountToDistribute) external {
         _distributeAmount(amountToDistribute);
         assertEq(token.turnstileBalance(), amountToDistribute);
     }
 
     function testWithdrawFromTurnstile(uint256 amountToDistribute) external {
-        vm.assume(amountToDistribute < 10000e18 && amountToDistribute > 1e18);
         _distributeAmount(amountToDistribute);
         // Assert that the turnstile balance is as expected
         assertEq(token.turnstileBalance(), amountToDistribute);
@@ -91,13 +91,15 @@ contract CsrRewardsERC20Test is Test {
         token.withdrawFromTurnstile();
         // Assert that the turnstile balance is now zero
         assertEq(token.turnstileBalance(), 0);
-        // Assert that user1 has earned 1/4 of the amount distributed
-        // This assumes user1 received 25% of the supply, same as others        
-        assertEq(token.earned(user1), amountToDistribute / 4);
+        // Compute the fraction of the eligible supply user1 has and compare to fraction of rewards received
+        uint256 user1EligibleBalance = token.rewardEligibleBalanceOf(user1);
+        uint256 totalEligibleSupply = token.totalRewardEligibleSupply();
+        // Assert that user1 has earned their proportion of the amount distributed
+        // This assumes user1 received a proportion of the supply, based on their eligible balance
+        assertEq(token.earned(user1), amountToDistribute * user1EligibleBalance / totalEligibleSupply);
     }
 
-    function testUserCanClaimRewards() external {
-        uint256 amountToDistribute = 10000;
+    function testUserCanClaimRewards(uint256 amountToDistribute) external {
         _distributeAmount(amountToDistribute);
         token.withdrawFromTurnstile();
         // Ensure that the user has some rewards to claim
@@ -106,13 +108,32 @@ contract CsrRewardsERC20Test is Test {
         // Store the initial balance of the user
         uint256 initialBalance = address(user1).balance;
         // Prank user1 to claim their rewards
-        vm.startPrank(user1);
+        vm.prank(user1);
         token.getReward();
-        vm.stopPrank();
         // Assert that the rewards have been transferred to the user's balance
         uint256 finalBalance = address(user1).balance;
         assertEq(finalBalance, initialBalance + rewards);
     }
+
+    function testUserGetsCorrectRewardsAfterTransfer(uint256 amountToDistribute, uint16 fractionToTransfer) external {
+        // Ensure fractionToTransfer is between 0 and 10000
+        vm.assume(fractionToTransfer >= 0 && fractionToTransfer <= 10000);
+        uint256 balanceToTransfer = token.balanceOf(user1) * fractionToTransfer / 10000;
+        // Prank a transfer from user1 to user2, sending a fraction of user1's balance
+        vm.prank(user1);
+        token.transfer(user2, balanceToTransfer);
+        // Distribute and withdraw rewards from turnstile
+        _distributeAmount(amountToDistribute);
+        token.withdrawFromTurnstile();
+        // Compute the fraction of the eligible supply both users have and compare to fraction of rewards received
+        uint256 user1EligibleBalance = token.rewardEligibleBalanceOf(user1);
+        uint256 user2EligibleBalance = token.rewardEligibleBalanceOf(user2);
+        uint256 totalEligibleSupply = token.totalRewardEligibleSupply();
+        uint256 user1Rewards = token.earned(user1);
+        uint256 user2Rewards = token.earned(user2);
+        // Assert that expected fraction of rewards are received
+        assertEq(user1Rewards, amountToDistribute * user1EligibleBalance / totalEligibleSupply);
+        assertEq(user2Rewards, amountToDistribute * user2EligibleBalance / totalEligibleSupply);
+    }
+    
 }
-
-
