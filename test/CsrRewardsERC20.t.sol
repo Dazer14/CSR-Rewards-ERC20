@@ -57,14 +57,9 @@ contract CsrRewardsERC20Test is BaseTest {
         _distributeAmount(amountToDistribute);
         token.withdrawFromTurnstile();
         // Compute the fraction of the eligible supply both users have and compare to fraction of rewards received
-        uint256 user1EligibleBalance = token.rewardEligibleBalanceOf(user1);
-        uint256 user2EligibleBalance = token.rewardEligibleBalanceOf(user2);
-        uint256 totalEligibleSupply = token.totalRewardEligibleSupply();
-        uint256 user1Rewards = token.earned(user1);
-        uint256 user2Rewards = token.earned(user2);
         // Assert that expected fraction of rewards are received
-        assertEq(user1Rewards, amountToDistribute * user1EligibleBalance / totalEligibleSupply);
-        assertEq(user2Rewards, amountToDistribute * user2EligibleBalance / totalEligibleSupply);
+        assertEq(token.earned(user1), amountToDistribute * token.rewardEligibleBalanceOf(user1) / token.totalRewardEligibleSupply());
+        assertEq(token.earned(user2), amountToDistribute * token.rewardEligibleBalanceOf(user2) / token.totalRewardEligibleSupply());
     }
 
     function testMultipleTransfers(uint256 amountToDistribute, uint16 fractionToTransfer1, uint16 fractionToTransfer2) external {
@@ -73,11 +68,12 @@ contract CsrRewardsERC20Test is BaseTest {
         vm.assume(fractionToTransfer2 >= 0 && fractionToTransfer2 <= 10000);
         
         uint256 balanceToTransfer1 = token.balanceOf(user1) * fractionToTransfer1 / 10000;
-        uint256 balanceToTransfer2 = token.balanceOf(user2) * fractionToTransfer2 / 10000;
-        
+
         // Prank a transfer from user1 to user2
         vm.prank(user1);
         token.transfer(user2, balanceToTransfer1);
+        
+        uint256 balanceToTransfer2 = token.balanceOf(user2) * fractionToTransfer2 / 10000;
         
         // Prank a transfer from user2 to user3
         vm.prank(user2);
@@ -88,19 +84,47 @@ contract CsrRewardsERC20Test is BaseTest {
         token.withdrawFromTurnstile();
         
         // Compute the fraction of the eligible supply each user has and compare to fraction of rewards received
-        uint256 user1EligibleBalance = token.rewardEligibleBalanceOf(user1);
-        uint256 user2EligibleBalance = token.rewardEligibleBalanceOf(user2);
-        uint256 user3EligibleBalance = token.rewardEligibleBalanceOf(user3);
-        uint256 totalEligibleSupply = token.totalRewardEligibleSupply();
-        
-        uint256 user1Rewards = token.earned(user1);
-        uint256 user2Rewards = token.earned(user2);
-        uint256 user3Rewards = token.earned(user3);
-        
         // Assert that expected fraction of rewards are received by each user
-        assertEq(user1Rewards, amountToDistribute * user1EligibleBalance / totalEligibleSupply);
-        assertEq(user2Rewards, amountToDistribute * user2EligibleBalance / totalEligibleSupply);
-        assertEq(user3Rewards, amountToDistribute * user3EligibleBalance / totalEligibleSupply);
+        assertEq(token.earned(user1), amountToDistribute * token.rewardEligibleBalanceOf(user1) / token.totalRewardEligibleSupply());
+        assertEq(token.earned(user2), amountToDistribute * token.rewardEligibleBalanceOf(user2) / token.totalRewardEligibleSupply());
+        assertEq(token.earned(user3), amountToDistribute * token.rewardEligibleBalanceOf(user3) / token.totalRewardEligibleSupply());
+    }
+
+    function testMultipleDistributionsWithTransfers(uint256 amountToDistribute1, uint256 amountToDistribute2, uint16 fractionToTransfer1, uint16 fractionToTransfer2) external {
+        // Ensure fractions are between 0 and 10000
+        vm.assume(fractionToTransfer1 >= 0 && fractionToTransfer1 <= 10000);
+        vm.assume(fractionToTransfer2 >= 0 && fractionToTransfer2 <= 10000);
+
+        // Calculate the balance to transfer
+        uint256 balanceToTransfer1 = token.balanceOf(user1) * fractionToTransfer1 / 10000;
+
+        // Prank a transfer from user1 to user2
+        vm.prank(user1);
+        token.transfer(user2, balanceToTransfer1);
+
+        // Distribute and withdraw rewards from turnstile
+        _distributeAmount(amountToDistribute1);
+        token.withdrawFromTurnstile();
+
+        uint256 user1RewardsDist1 = amountToDistribute1 * token.rewardEligibleBalanceOf(user1) / token.totalRewardEligibleSupply();
+        uint256 user2RewardsDist1 = amountToDistribute1 * token.rewardEligibleBalanceOf(user2) / token.totalRewardEligibleSupply();
+        assertEq(token.earned(user1), user1RewardsDist1);
+        assertEq(token.earned(user2), user2RewardsDist1);
+
+        uint256 balanceToTransfer2 = token.balanceOf(user1) * fractionToTransfer2 / 10000;
+        
+        // Prank a transfer from user1 to user2
+        vm.prank(user1);
+        token.transfer(user2, balanceToTransfer2);
+
+        // Distribute and withdraw rewards from turnstile
+        _distributeAmount(amountToDistribute2);
+        token.withdrawFromTurnstile();
+
+        uint256 user1RewardsDist2 = amountToDistribute2 * token.rewardEligibleBalanceOf(user1) / token.totalRewardEligibleSupply();
+        uint256 user2RewardsDist2 = amountToDistribute2 * token.rewardEligibleBalanceOf(user2) / token.totalRewardEligibleSupply();
+        assertEq(token.earned(user1), user1RewardsDist1 + user1RewardsDist2);
+        assertEq(token.earned(user2), user2RewardsDist1 + user2RewardsDist2);
     }
     
 }

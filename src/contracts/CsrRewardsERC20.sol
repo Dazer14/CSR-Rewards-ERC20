@@ -9,8 +9,6 @@ import {TurnstileRegister} from "./TurnstileRegister.sol";
  * @title CSR Reward Accumulating Token
  * Distributes all CSR earned to reward eligible holders
  * Logic is borrowed and modified from Synthetix StakingRewards.sol
- *
- * It might make sense to enforce certain supply sizes and decimal amounts
  */
 abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard, TurnstileRegister {
     uint256 public rewardPerEligibleToken;
