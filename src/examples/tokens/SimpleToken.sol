@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {CsrRewardsERC20} from "../../contracts/CsrRewardsERC20.sol";
+import {CsrRewardsERC20, ERC20} from "../../contracts/CsrRewardsERC20.sol";
 
 contract SimpleToken is ERC20, CsrRewardsERC20 {
     constructor(string memory _name, string memory _symbol, uint16 _withdrawFeeBasisPoints, uint256 _supply)
