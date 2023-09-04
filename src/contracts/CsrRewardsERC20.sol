@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import {ERC20} from "lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
-import {ReentrancyGuard} from "lib/openzeppelin-contracts/contracts/security/ReentrancyGuard.sol";
 import {TurnstileRegister} from "./TurnstileRegister.sol";
 
 /**
@@ -10,7 +9,7 @@ import {TurnstileRegister} from "./TurnstileRegister.sol";
  * Distributes all CSR earned to reward eligible holders
  * Logic is borrowed and modified from Synthetix StakingRewards.sol
  */
-abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard, TurnstileRegister {
+abstract contract CsrRewardsERC20 is ERC20, TurnstileRegister {
     uint256 public rewardPerEligibleToken;
     mapping(address => uint256) public userRewardPerTokenPaid;
     mapping(address => uint256) public rewardsEarned;
@@ -101,7 +100,7 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard, TurnstileRegister {
     /// EXTERNAL MUTABLE FUNCTIONS
 
     /// @notice Token holder function for claiming CSR rewards
-    function getReward() external virtual nonReentrant {
+    function getReward() external virtual {
         _updateReward(msg.sender);
         uint256 reward = rewardsEarned[msg.sender];
         if (reward > 0) {
@@ -113,7 +112,7 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard, TurnstileRegister {
     }
 
     /// @notice Public function for collecting and distributing contract accumulated CSR
-    function withdrawFromTurnstile() external virtual nonReentrant {
+    function withdrawFromTurnstile() external virtual {
         uint256 amountToClaim = turnstileBalance();
         require(amountToClaim > 0, "CsrRewardsERC20: No CSR to claim");
 

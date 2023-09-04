@@ -4,7 +4,11 @@ pragma solidity ^0.8.0;
 import "./BaseTest.sol";
 
 contract Distributions is BaseTest {
-    function testMultipleDistributionsWithoutTransfers(uint256 amountToDistribute1, uint256 amountToDistribute2, uint256 amountToDistribute3) external {
+    function testMultipleDistributionsWithoutTransfers(
+        uint256 amountToDistribute1, 
+        uint256 amountToDistribute2, 
+        uint256 amountToDistribute3
+    ) external {
         // Distribute and withdraw rewards from turnstile
         _distributeAndWithdraw(amountToDistribute1);
         _distributeAndWithdraw(amountToDistribute2);
@@ -14,18 +18,38 @@ contract Distributions is BaseTest {
         _assertEarnedRewards(user1, amountToDistribute1 + amountToDistribute2 + amountToDistribute3);
     }
 
-    function testDistributionsWithTransfers(uint256 amountToDistribute1, uint256 amountToDistribute2, uint16 fractionToTransfer1, uint16 fractionToTransfer2) external {
+    function testDistributionsWithTransfers(
+        uint256 amountToDistribute1, 
+        uint256 amountToDistribute2, 
+        uint16 fractionToTransfer1, 
+        uint16 fractionToTransfer2
+    ) external {
         _validateFraction(fractionToTransfer1);
         _validateFraction(fractionToTransfer2);
 
         uint256[] memory distributionAmounts1 = new uint256[](1);
         distributionAmounts1[0] = amountToDistribute1;
-        (uint256 user1RewardsDist1, uint256 user2RewardsDist1) = _transferAndDistributeMultiple(user1, user2, fractionToTransfer1, distributionAmounts1);
+        (
+            uint256 user1RewardsDist1, 
+            uint256 user2RewardsDist1
+        ) = _transferAndDistributeMultiple(
+            user1, 
+            user2, 
+            fractionToTransfer1, 
+            distributionAmounts1
+        );
 
         uint256[] memory distributionAmounts2 = new uint256[](1);
         distributionAmounts2[0] = amountToDistribute2;
-        (uint256 user1RewardsDist2, uint256 user2RewardsDist2) = _transferAndDistributeMultiple(user1, user2, fractionToTransfer2, distributionAmounts2);
-        
+        (
+            uint256 user1RewardsDist2, 
+            uint256 user2RewardsDist2
+        ) = _transferAndDistributeMultiple(
+            user1, 
+            user2, 
+            fractionToTransfer2, 
+            distributionAmounts2
+        );
         assertEq(token.earned(user1), user1RewardsDist1 + user1RewardsDist2);
         assertEq(token.earned(user2), user2RewardsDist1 + user2RewardsDist2);
     }
@@ -44,12 +68,28 @@ contract Distributions is BaseTest {
         uint256[] memory distributionAmounts1 = new uint256[](2);
         distributionAmounts1[0] = amountToDistribute1;
         distributionAmounts1[1] = amountToDistribute2;
-        (uint256 user1RewardsDist1, uint256 user2RewardsDist1) = _transferAndDistributeMultiple(user1, user2, fractionToTransfer1, distributionAmounts1);
+        (
+            uint256 user1RewardsDist1, 
+            uint256 user2RewardsDist1
+        ) = _transferAndDistributeMultiple(
+            user1, 
+            user2, 
+            fractionToTransfer1, 
+            distributionAmounts1
+        );
 
         uint256[] memory distributionAmounts2 = new uint256[](2);
         distributionAmounts2[0] = amountToDistribute3;
         distributionAmounts2[1] = amountToDistribute4;
-        (uint256 user1RewardsDist2, uint256 user2RewardsDist2) = _transferAndDistributeMultiple(user1, user2, fractionToTransfer2, distributionAmounts2);
+        (
+            uint256 user1RewardsDist2, 
+            uint256 user2RewardsDist2
+        ) = _transferAndDistributeMultiple(
+            user1, 
+            user2, 
+            fractionToTransfer2, 
+            distributionAmounts2
+        );
 
         assertEq(token.earned(user1), user1RewardsDist1 + user1RewardsDist2);
         assertEq(token.earned(user2), user2RewardsDist1 + user2RewardsDist2);
@@ -76,14 +116,24 @@ contract Distributions is BaseTest {
         uint256[] memory distributionAmounts1 = new uint256[](2);
         distributionAmounts1[0] = amountToDistribute1;
         distributionAmounts1[1] = amountToDistribute2;
-        (uint256 user1RewardsDist1,) = _transferAndDistributeMultiple(user1, existingContract, fractionToTransfer1, distributionAmounts1);
+        (uint256 user1RewardsDist1,) = _transferAndDistributeMultiple(
+            user1, 
+            existingContract, 
+            fractionToTransfer1, 
+            distributionAmounts1
+        );
         assertEq(token.earned(user1), user1RewardsDist1);
 
         // Existing to Eligible
         uint256[] memory distributionAmounts2 = new uint256[](2);
         distributionAmounts2[0] = amountToDistribute3;
         distributionAmounts2[1] = amountToDistribute4;
-        (, uint256 rewardEligibleContractRewardsDist2) = _transferAndDistributeMultiple(existingContract, rewardEligibleContract, fractionToTransfer2, distributionAmounts2);
+        (, uint256 rewardEligibleContractRewardsDist2) = _transferAndDistributeMultiple(
+            existingContract, 
+            rewardEligibleContract, 
+            fractionToTransfer2, 
+            distributionAmounts2
+        );
 
         assertEq(token.earned(existingContract), 0);
         assertEq(token.earned(rewardEligibleContract), rewardEligibleContractRewardsDist2);
