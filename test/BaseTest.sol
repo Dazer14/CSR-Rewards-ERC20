@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {Test} from "lib/forge-std/src/Test.sol";
+
 import {CsrRewardsERC20, ERC20} from "src/contracts/CsrRewardsERC20.sol";
 import {TurnstileInterface} from "src/contracts/TurnstileInterface.sol";
 
@@ -24,6 +25,27 @@ contract TestToken is ERC20, CsrRewardsERC20 {
     }
 }
 
+contract EligibilityFaucet {
+    address public immutable csrRewardsToken;
+
+    constructor(address _csrRewardsToken) {
+        csrRewardsToken = _csrRewardsToken;
+    }
+
+    function drip() external {
+        (bool success,) = csrRewardsToken.call(abi.encodeWithSignature("transfer(address,uint256)", msg.sender, 1));
+        require(success, "EligibilityFaucet: Transfer failed");
+    }
+}
+
+contract RewardEligibleContract {
+    constructor(address _faucet) {
+        // Use a low-level call to drip
+        (bool success,) = _faucet.call(abi.encodeWithSignature("drip()"));
+        require(success, "RewardEligibleContract: Drip failed");
+    }
+}
+
 contract BaseTest is Test {
     TestToken public token;
 
@@ -39,8 +61,13 @@ contract BaseTest is Test {
     uint256 public totalSupply = 4_000_000e18;
     uint256 public userBalance = totalSupply / 4;
 
+    EligibilityFaucet public faucet;
+
+    uint16 public constant MAX_FRACTION = 10000;
+
     function setUp() public {
         vm.createSelectFork(vm.rpcUrl("canto"));
+        
         // Testing with no withdraw call fee
         token = new TestToken("Test", "TEST", 0);
 
@@ -55,6 +82,10 @@ contract BaseTest is Test {
         token.transfer(user3, userBalance);
         token.transfer(user4, userBalance);
         vm.stopPrank();
+
+        // Create faucet and provide with 10 tokens
+        faucet = new EligibilityFaucet(address(token));
+        deal(address(token), address(faucet), 10, true);
     }
 
     // Helpers
@@ -66,4 +97,42 @@ contract BaseTest is Test {
         TurnstileOwnerControls(turnstile).distributeFees{value:amount}(token.csrID());
         vm.stopPrank();
     }
+
+    function _transfer(address from, address to, uint256 amount) internal {
+        vm.prank(from);
+        token.transfer(to, amount);
+    }
+
+    function _distributeAndWithdraw(uint256 amount) internal {
+        _distributeAmount(amount);
+        token.withdrawFromTurnstile();
+    }
+
+    function _calculateRewardsByEligibleBalance(uint256 amountToDistribute, address user) internal view returns (uint256) {
+        return amountToDistribute * token.rewardEligibleBalanceOf(user) / token.totalRewardEligibleSupply();
+    }
+
+    function _validateFraction(uint16 fraction) internal pure {
+        vm.assume(fraction >= 0 && fraction <= MAX_FRACTION);
+    }
+
+    function _amountToTransfer(address account, uint16 fraction) internal view returns (uint256) {
+        return token.balanceOf(account) * fraction / MAX_FRACTION;
+    }
+
+    // Asserts
+
+    function _assertEarnedRewards(address user, uint256 amountToDistribute) internal {
+        uint256 calculatedRewards = _calculateRewardsByEligibleBalance(amountToDistribute, user);
+        assertEq(token.earned(user), calculatedRewards);
+    }
+
+    function _assertBalance(address user, uint256 expectedBalance) internal {
+        assertEq(token.balanceOf(user), expectedBalance);
+    }
+
+    function _assertRewardEligibleBalance(address user, uint256 expectedBalance) internal {
+        assertEq(token.rewardEligibleBalanceOf(user), expectedBalance);
+    }
+
 }
