@@ -15,53 +15,38 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard, TurnstileRegister {
     mapping(address => uint256) public userRewardPerTokenPaid;
     mapping(address => uint256) public rewardsEarned;
 
-    uint256 private _totalRewardEligibleSupply;
-    mapping(address => uint256) private _rewardEligibleBalances;
-    mapping(address => bool) private _rewardEligibleAddress;
+    uint256 internal _totalRewardEligibleSupply;
+    mapping(address => uint256) internal _rewardEligibleBalances;
+    mapping(address => bool) internal _rewardEligibleAddress;
 
-    uint16 public withdrawCallFeeBasisPoints;
     uint16 internal constant _BPS = 10000;
 
     event RewardsDelivered(uint256 amount);
     event RewardsClaimed(address indexed account, uint256 amount);
 
-    constructor(
-        uint16 _withdrawCallFeeBasisPoints
-    ) TurnstileRegister() {
-        withdrawCallFeeBasisPoints = _withdrawCallFeeBasisPoints;
-    }
+    constructor() TurnstileRegister() {}
 
-    receive() external payable {
-        if (msg.sender != address(TURNSTILE)) {
-           _registerRewardDelivery(msg.value); 
-        }
+    receive() external payable virtual {
+        _registerRewardDelivery(msg.value);
     }
 
     /// VIEW FUNCTIONS
 
-    function totalRewardEligibleSupply() external view returns (uint256) {
+    function totalRewardEligibleSupply() external view virtual returns (uint256) {
         return _totalRewardEligibleSupply;
     }
 
-    function rewardEligibleBalanceOf(address account) external view returns (uint256) {
+    function rewardEligibleBalanceOf(address account) external view virtual returns (uint256) {
         return _rewardEligibleBalances[account];
     }
 
-    function earned(address account) public view returns (uint256) {
+    function earned(address account) public view virtual returns (uint256) {
         return rewardsEarned[account]
             + (_rewardEligibleBalances[account] * (rewardPerEligibleToken - userRewardPerTokenPaid[account]) / 1e36);
     }
 
-    function turnstileBalance() public view returns (uint256) {
+    function turnstileBalance() public view virtual returns (uint256) {
         return TURNSTILE.balances(csrID);
-    }
-
-    function _withdrawFeeAmount(uint256 amountBeingClaimed) internal view returns (uint256) {
-        return amountBeingClaimed * withdrawCallFeeBasisPoints / _BPS;
-    }
-
-    function currentWithdrawFeeAmount() external view returns (uint256) {
-        return _withdrawFeeAmount(turnstileBalance());
     }
 
     /// INTERNAL FUNCTIONS
@@ -87,23 +72,23 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard, TurnstileRegister {
         }
     }
 
-    function _transferCANTO(address to, uint256 amount) internal {
+    function _transferCANTO(address to, uint256 amount) internal virtual {
         (bool success,) = payable(to).call{value: amount}("");
         require(success, "CsrRewardsERC20: Unable to send value, recipient may have reverted");
     }
 
-    function _updateReward(address account) internal {
+    function _updateReward(address account) internal virtual {
         rewardsEarned[account] = earned(account);
         userRewardPerTokenPaid[account] = rewardPerEligibleToken;
     }
 
-    function _registerRewardDelivery(uint256 rewardAmount) internal {
+    function _registerRewardDelivery(uint256 rewardAmount) internal virtual {
         rewardPerEligibleToken += rewardAmount * 1e36 / _totalRewardEligibleSupply;
 
         emit RewardsDelivered(rewardAmount);
     }
 
-    function _increaseRewardEligibleBalance(address to, uint256 amount) private {
+    function _increaseRewardEligibleBalance(address to, uint256 amount) internal virtual {
         _updateReward(to);
         _totalRewardEligibleSupply += amount;
         _rewardEligibleBalances[to] += amount;
@@ -129,14 +114,6 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard, TurnstileRegister {
         require(amountToClaim > 0, "CsrRewardsERC20: No CSR to claim");
 
         TURNSTILE.withdraw(csrID, payable(address(this)), amountToClaim);
-
-        if (withdrawCallFeeBasisPoints != 0) {
-            uint256 feeAmount = _withdrawFeeAmount(amountToClaim);
-            _registerRewardDelivery(amountToClaim - feeAmount);
-            _transferCANTO(msg.sender, feeAmount);
-        } else {
-            _registerRewardDelivery(amountToClaim);
-        }
     }
 }
 

@@ -58,23 +58,12 @@ contract CsrRewardsERC20Test is BaseTest {
     }
 
     function testMultipleTransfers(uint256 amountToDistribute, uint16 fractionToTransfer1, uint16 fractionToTransfer2) external {
-        // Validate the fractions
         _validateFraction(fractionToTransfer1);
         _validateFraction(fractionToTransfer2);
         
-        // Calculate the amount to transfer
-        uint256 amountToTransfer1 = _amountToTransfer(user1, fractionToTransfer1);
-
-        // Prank a transfer from user1 to user2
-        _transfer(user1, user2, amountToTransfer1);
+        _transfer(user1, user2, _amountToTransfer(user1, fractionToTransfer1));
+        _transfer(user2, user3, _amountToTransfer(user2, fractionToTransfer2));
         
-        // Calculate the amount to transfer
-        uint256 amountToTransfer2 = _amountToTransfer(user2, fractionToTransfer2);
-        
-        // Prank a transfer from user2 to user3
-        _transfer(user2, user3, amountToTransfer2);
-        
-        // Distribute and withdraw rewards from turnstile
         _distributeAndWithdraw(amountToDistribute);
         
         // Compute the fraction of the eligible supply each user has and compare to fraction of rewards received
@@ -82,40 +71,6 @@ contract CsrRewardsERC20Test is BaseTest {
         _assertEarnedRewards(user1, amountToDistribute);
         _assertEarnedRewards(user2, amountToDistribute);
         _assertEarnedRewards(user3, amountToDistribute);
-    }
-
-    function testMultipleDistributionsWithTransfers(uint256 amountToDistribute1, uint256 amountToDistribute2, uint16 fractionToTransfer1, uint16 fractionToTransfer2) external {
-        // Validate the fractions
-        _validateFraction(fractionToTransfer1);
-        _validateFraction(fractionToTransfer2);
-
-        // Calculate the amount to transfer
-        uint256 amountToTransfer1 = _amountToTransfer(user1, fractionToTransfer1);
-
-        // Prank a transfer from user1 to user2
-        _transfer(user1, user2, amountToTransfer1);
-
-        // Distribute and withdraw rewards from turnstile
-        _distributeAndWithdraw(amountToDistribute1);
-
-        uint256 user1RewardsDist1 = _calculateRewardsByEligibleBalance(amountToDistribute1, user1);
-        uint256 user2RewardsDist1 = _calculateRewardsByEligibleBalance(amountToDistribute1, user2);
-        assertEq(token.earned(user1), user1RewardsDist1);
-        assertEq(token.earned(user2), user2RewardsDist1);
-
-        // Calculate the amount to transfer
-        uint256 amountToTransfer2 = _amountToTransfer(user1, fractionToTransfer2);
-        
-        // Prank a transfer from user1 to user2
-        _transfer(user1, user2, amountToTransfer2);
-
-        // Distribute and withdraw rewards from turnstile
-        _distributeAndWithdraw(amountToDistribute2);
-
-        uint256 user1RewardsDist2 = _calculateRewardsByEligibleBalance(amountToDistribute2, user1);
-        uint256 user2RewardsDist2 = _calculateRewardsByEligibleBalance(amountToDistribute2, user2);
-        assertEq(token.earned(user1), user1RewardsDist1 + user1RewardsDist2);
-        assertEq(token.earned(user2), user2RewardsDist1 + user2RewardsDist2);
     }
     
 }

@@ -14,15 +14,18 @@ contract Contracts is BaseTest {
         // Capture the total eligible supply before the transfer
         uint256 totalEligibleSupplyBefore = token.totalRewardEligibleSupply();
         
-        // Prank a transfer from user1 to turnstile
-        _transfer(user1, turnstile, amountToTransfer);
+        // Define a local existingContract variable
+        address existingContract = turnstile;
+
+        // Prank a transfer from user1 to existingContract
+        _transfer(user1, existingContract, amountToTransfer);
         
         // Capture the total eligible supply after the transfer
         uint256 totalEligibleSupplyAfter = token.totalRewardEligibleSupply();
         
-        // Assert that the balance of user1 and turnstile are as expected
+        // Assert that the balance of user1 and existingContract are as expected
         _assertRewardEligibleBalance(user1, token.balanceOf(user1));
-        _assertRewardEligibleBalance(turnstile, 0);
+        _assertRewardEligibleBalance(existingContract, 0);
         
         // Assert that the total eligible supply has been updated properly
         assertEq(totalEligibleSupplyBefore - totalEligibleSupplyAfter, token.balanceOf(turnstile));
@@ -102,10 +105,10 @@ contract Contracts is BaseTest {
         address rewardEligibleContract = address(new RewardEligibleContract(address(faucet)));
 
         // Calculate the amount to transfer
-        uint256 amountToTransfer = _amountToTransfer(user1, fractionToTransfer);
+        // uint256 amountToTransfer = _amountToTransfer(user1, fractionToTransfer);
         
         // Prank a transfer from user1 to rewardEligibleContract
-        _transfer(user1, rewardEligibleContract, amountToTransfer);
+        _transfer(user1, rewardEligibleContract, _amountToTransfer(user1, fractionToTransfer));
         
         // Distribute and withdraw rewards from turnstile
         _distributeAndWithdraw(amountToDistribute);

@@ -13,9 +13,8 @@ interface TurnstileOwnerControls {
 contract TestToken is ERC20, CsrRewardsERC20 {
     constructor(
         string memory _name, 
-        string memory _symbol,
-        uint8 _feeBasisPoints
-    ) ERC20(_name, _symbol) CsrRewardsERC20(_feeBasisPoints) {}
+        string memory _symbol
+    ) ERC20(_name, _symbol) CsrRewardsERC20() {}
 
     function _afterTokenTransfer(address from, address to, uint amount) 
         internal 
@@ -69,7 +68,7 @@ contract BaseTest is Test {
         vm.createSelectFork(vm.rpcUrl("canto"));
         
         // Testing with no withdraw call fee
-        token = new TestToken("Test", "TEST", 0);
+        token = new TestToken("Test", "TEST");
 
         vm.deal(turnstileOwner, type(uint256).max);
 
@@ -118,6 +117,26 @@ contract BaseTest is Test {
 
     function _amountToTransfer(address account, uint16 fraction) internal view returns (uint256) {
         return token.balanceOf(account) * fraction / MAX_FRACTION;
+    }
+
+    function _transferAndDistributeMultiple(
+        address from, 
+        address to, 
+        uint16 fractionToTransfer, 
+        uint256[] memory distributionAmounts
+    ) internal returns (uint256 fromRewards, uint256 toRewards, uint256 totalDistributed) {
+        _validateFraction(fractionToTransfer);
+
+        _transfer(from, to, _amountToTransfer(from, fractionToTransfer));
+
+        for (uint256 i = 0; i < distributionAmounts.length; i++) {
+            _distributeAndWithdraw(distributionAmounts[i]);
+            totalDistributed += distributionAmounts[i];
+        }
+
+        // Calculate rewards by eligible balance
+        fromRewards = _calculateRewardsByEligibleBalance(totalDistributed, from);
+        toRewards = _calculateRewardsByEligibleBalance(totalDistributed, to);
     }
 
     // Asserts
