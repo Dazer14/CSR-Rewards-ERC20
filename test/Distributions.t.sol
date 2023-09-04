@@ -3,21 +3,6 @@ pragma solidity ^0.8.0;
 
 import "./BaseTest.sol";
 
-// 1. Multiple Distributions Without Transfers: Test the case where multiple distributions occur without any transfers in between. This will help ensure that the contract correctly handles multiple distributions.
-
-// 2. Multiple Distributions With Transfers In Between: Test the case where multiple distributions occur with transfers in between. This will help ensure that the contract correctly handles distributions and transfers in combination.
-
-// 3. Multiple Distributions With Various Amounts: Test the case where multiple distributions occur with varying amounts. This will help ensure that the contract correctly handles distributions of different sizes.
-
-// 4. Multiple Distributions With Various Fractions: Test the case where multiple distributions occur with varying fractions. This will help ensure that the contract correctly handles distributions with different fractions.
-
-// 5. Multiple Distributions With Various Users: Test the case where multiple distributions occur involving different users. This will help ensure that the contract correctly handles distributions involving different users.
-
-// 6. Multiple Distributions With Various Contracts: Test the case where multiple distributions occur involving different contracts. This will help ensure that the contract correctly handles distributions involving different contracts.
-
-// 7. Multiple Distributions With Various Timing: Test the case where multiple distributions occur at different times. This will help ensure that the contract correctly handles distributions that occur at different times.
-
-// 8. Multiple Distributions With Various Order of Operations: Test the case where multiple distributions occur with different orders of operations. This will help ensure that the contract correctly handles distributions that occur in different orders.
 contract Distributions is BaseTest {
     function testMultipleDistributionsWithoutTransfers(uint256 amountToDistribute1, uint256 amountToDistribute2, uint256 amountToDistribute3) external {
         // Distribute and withdraw rewards from turnstile
