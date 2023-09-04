@@ -23,11 +23,8 @@ contract CsrRewardsERC20Test is BaseTest {
         // Assert that the turnstile balance is now zero
         assertEq(token.turnstileBalance(), 0);
         // Compute the fraction of the eligible supply user1 has and compare to fraction of rewards received
-        uint256 user1EligibleBalance = token.rewardEligibleBalanceOf(user1);
-        uint256 totalEligibleSupply = token.totalRewardEligibleSupply();
-        // Assert that user1 has earned their proportion of the amount distributed
         // This assumes user1 received a proportion of the supply, based on their eligible balance
-        assertEq(token.earned(user1), amountToDistribute * user1EligibleBalance / totalEligibleSupply);
+        assertEq(token.earned(user1), amountToDistribute * token.rewardEligibleBalanceOf(user1) / token.totalRewardEligibleSupply());
     }
 
     function testUserCanClaimRewards(uint256 amountToDistribute) external {

@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "forge-std/Test.sol";
-import "forge-std/Vm.sol";
-import "forge-std/console.sol";
-
+import {Test} from "lib/forge-std/src/Test.sol";
 import {CsrRewardsERC20, ERC20} from "src/contracts/CsrRewardsERC20.sol";
 import {TurnstileInterface} from "src/contracts/TurnstileInterface.sol";
 
@@ -34,12 +31,12 @@ contract BaseTest is Test {
     address public turnstileOwner = address(0xC27338c453067b437471aFBCE792704D816112c6);
 
     address public origin = address(0x555);
-    address public user1 = address(0x1);
-    address public user2 = address(0x2);
-    address public user3 = address(0x3);
-    address public user4 = address(0x4);
+    address public user1 = address(0x111);
+    address public user2 = address(0x222);
+    address public user3 = address(0x333);
+    address public user4 = address(0x444);
 
-    uint256 public totalSupply = 4000;
+    uint256 public totalSupply = 4_000_000e18;
     uint256 public userBalance = totalSupply / 4;
 
     function setUp() public {
@@ -50,7 +47,7 @@ contract BaseTest is Test {
         vm.deal(turnstileOwner, type(uint256).max);
 
         // Deal then transfer to make sure after transfer hook is run
-        // Only users will have an eligible account 
+        // Only these users will have an eligible account initially
         deal(address(token), origin, totalSupply, true);
         vm.startPrank(origin);
         token.transfer(user1, userBalance);
@@ -64,7 +61,7 @@ contract BaseTest is Test {
 
     function _distributeAmount(uint256 amount) internal {
         // Mocking a wide range of reward amounts
-        vm.assume(amount < 10000e18 && amount > 10000);
+        vm.assume(amount < 10000e18 && amount > 1000);
         vm.startPrank(turnstileOwner);
         TurnstileOwnerControls(turnstile).distributeFees{value:amount}(token.csrID());
         vm.stopPrank();

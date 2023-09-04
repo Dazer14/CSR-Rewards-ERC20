@@ -62,4 +62,33 @@ contract Contracts is BaseTest {
         assertEq(totalEligibleSupplyBefore - totalEligibleSupplyAfter, token.balanceOf(turnstile));
     }
 
+    function testCorrectRewardsReceivedAfterTransferToAndFromContract(uint256 amountToDistribute, uint16 fractionToTransfer1, uint16 fractionToTransfer2) external {
+        // Ensure fractions are between 0 and 10000
+        vm.assume(fractionToTransfer1 >= 0 && fractionToTransfer1 <= 10000);
+        vm.assume(fractionToTransfer2 >= 0 && fractionToTransfer2 <= 10000);
+        
+        // Calculate the balance to transfer
+        uint256 balanceToTransfer1 = token.balanceOf(user1) * fractionToTransfer1 / 10000;
+        
+        // Prank a transfer from user1 to turnstile
+        vm.prank(user1);
+        token.transfer(turnstile, balanceToTransfer1);
+        
+        // Calculate the balance to transfer
+        uint256 balanceToTransfer2 = token.balanceOf(turnstile) * fractionToTransfer2 / 10000;
+        
+        // Prank a transfer from turnstile to user2
+        vm.prank(turnstile);
+        token.transfer(user2, balanceToTransfer2);
+        
+        // Distribute and withdraw rewards from turnstile
+        _distributeAmount(amountToDistribute);
+        token.withdrawFromTurnstile();
+        
+        // Compute the fraction of the eligible supply each user has and compare to fraction of rewards received
+        assertEq(token.earned(user1), amountToDistribute * token.rewardEligibleBalanceOf(user1) / token.totalRewardEligibleSupply());
+        assertEq(token.earned(user2), amountToDistribute * token.rewardEligibleBalanceOf(user2) / token.totalRewardEligibleSupply());
+        assertEq(token.earned(turnstile), 0); // turnstile should not earn rewards
+    }
+
 }

@@ -49,7 +49,7 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard, TurnstileRegister {
 
     function earned(address account) public view returns (uint256) {
         return rewardsEarned[account]
-            + (_rewardEligibleBalances[account] * (rewardPerEligibleToken - userRewardPerTokenPaid[account]) / 1e18);
+            + (_rewardEligibleBalances[account] * (rewardPerEligibleToken - userRewardPerTokenPaid[account]) / 1e36);
     }
 
     function turnstileBalance() public view returns (uint256) {
@@ -98,7 +98,7 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard, TurnstileRegister {
     }
 
     function _registerRewardDelivery(uint256 rewardAmount) internal {
-        rewardPerEligibleToken += rewardAmount * 1e18 / _totalRewardEligibleSupply;
+        rewardPerEligibleToken += rewardAmount * 1e36 / _totalRewardEligibleSupply;
 
         emit RewardsDelivered(rewardAmount);
     }
