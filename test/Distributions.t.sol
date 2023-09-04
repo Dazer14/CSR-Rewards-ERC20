@@ -91,12 +91,25 @@ contract Distributions is BaseTest {
 
     // Test sending CANTO to contract
     function testUserEarnsRewardsFromExternalCANTOSend(uint256 amountToSend) external {
-        vm.assume(amountToSend < 1000000e18);
-        vm.deal(address(this), amountToSend);
-        (bool success,) = payable(address(token)).call{value: amountToSend}("");
-        require(success, "CANTO send failed");
+        _sendCANTOToTokenContract(amountToSend);
 
         // Compute the fraction of the eligible supply user1 has and compare to fraction of rewards received
         _assertEarnedRewards(user1, amountToSend);
+    }
+
+    function testUsersEarnRewardsFromMultipleExternalCANTOSends(
+        uint256 amountToSend1, 
+        uint256 amountToSend2, 
+        uint256 amountToSend3
+    ) external {
+        // Send CANTO to the contract three times
+        _sendCANTOToTokenContract(amountToSend1);
+        _sendCANTOToTokenContract(amountToSend2);
+        _sendCANTOToTokenContract(amountToSend3);
+
+        // Compute the fraction of the eligible supply each user has and compare to fraction of rewards received
+        uint256 totalSent = amountToSend1 + amountToSend2 + amountToSend3;
+        _assertEarnedRewards(user1, totalSent);
+        _assertEarnedRewards(user2, totalSent);
     }
 }

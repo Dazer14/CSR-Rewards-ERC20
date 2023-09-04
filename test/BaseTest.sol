@@ -140,6 +140,13 @@ contract BaseTest is Test {
         toRewards = _calculateRewardsByEligibleBalance(totalDistributed, to);
     }
 
+    function _sendCANTOToTokenContract(uint256 amountToSend) internal {
+        vm.assume(amountToSend < 1000000e18);
+        vm.deal(address(this), amountToSend);
+        (bool success,) = payable(address(token)).call{value: amountToSend}("");
+        require(success, "CANTO send failed");
+    }
+
     // Asserts
 
     function _assertEarnedRewards(address user, uint256 amountToDistribute) internal {
