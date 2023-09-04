@@ -103,9 +103,6 @@ contract Contracts is BaseTest {
         
         // Deploy a new instance of RewardEligibleContract
         address rewardEligibleContract = address(new RewardEligibleContract(address(faucet)));
-
-        // Calculate the amount to transfer
-        // uint256 amountToTransfer = _amountToTransfer(user1, fractionToTransfer);
         
         // Prank a transfer from user1 to rewardEligibleContract
         _transfer(user1, rewardEligibleContract, _amountToTransfer(user1, fractionToTransfer));

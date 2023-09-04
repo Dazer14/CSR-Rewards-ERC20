@@ -124,11 +124,12 @@ contract BaseTest is Test {
         address to, 
         uint16 fractionToTransfer, 
         uint256[] memory distributionAmounts
-    ) internal returns (uint256 fromRewards, uint256 toRewards, uint256 totalDistributed) {
+    ) internal returns (uint256 fromRewards, uint256 toRewards) {
         _validateFraction(fractionToTransfer);
 
         _transfer(from, to, _amountToTransfer(from, fractionToTransfer));
 
+        uint256 totalDistributed = 0;
         for (uint256 i = 0; i < distributionAmounts.length; i++) {
             _distributeAndWithdraw(distributionAmounts[i]);
             totalDistributed += distributionAmounts[i];

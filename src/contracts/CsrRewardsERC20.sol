@@ -40,6 +40,10 @@ abstract contract CsrRewardsERC20 is ERC20, ReentrancyGuard, TurnstileRegister {
         return _rewardEligibleBalances[account];
     }
 
+    function isRewardEligible(address account) external view virtual returns (bool) {
+        return _rewardEligibleAddress[account];
+    }
+
     function earned(address account) public view virtual returns (uint256) {
         return rewardsEarned[account]
             + (_rewardEligibleBalances[account] * (rewardPerEligibleToken - userRewardPerTokenPaid[account]) / 1e36);
