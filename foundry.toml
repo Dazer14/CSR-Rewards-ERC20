@@ -4,7 +4,8 @@ src = "src"
 out = "out"
 libs = ["lib"]
 remappings = [
-    "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/"
+    "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
+    "@forge/=lib/forge-std/src/"
 ]
 [rpc_endpoints]
 canto = "https://canto.gravitychain.io"

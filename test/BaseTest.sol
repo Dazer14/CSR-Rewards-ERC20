@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Test} from "lib/forge-std/src/Test.sol";
+import {Test} from "@forge/Test.sol";
 
 import {CsrRewardsERC20, ERC20} from "src/contracts/CsrRewardsERC20.sol";
 import {TurnstileInterface} from "src/contracts/TurnstileInterface.sol";
