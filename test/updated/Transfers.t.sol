@@ -177,5 +177,47 @@ contract TransferTests is Base {
         _assertApproxRewardsFromDistribution(rewardEligibleContract, amountToDistribute);
         _assertApproxRewardsFromDistribution(rewardEligibleContract2, amountToDistribute);
     }
+
+    function testFuzz_TransferBetweenBothContractTypes(
+        uint256 totalSupply, 
+        uint16 fraction1, 
+        uint16 fraction2, 
+        uint16 fraction3, 
+        uint16 fraction4, 
+        uint16 fraction5, 
+        uint16 fraction6, 
+        uint256 amountToDistribute
+    ) public {
+        _setUpToken(totalSupply, fraction1, fraction2);
+        _validateFraction(fraction3);
+        _validateFraction(fraction4);
+        _validateFraction(fraction5);
+        _validateFraction(fraction6);
+
+        // Setup extra reward eligible and existing contracts using helpers in Base.sol
+        address rewardEligibleContract2 = _setUpRewardEligibleContract();
+        address existingContract2 = _setUpExistingContract();
+
+        // Transfer from user1 to rewardEligibleContract using the third fraction
+        _transfer(user1, rewardEligibleContract, _amountToTransfer(user1, fraction3));
+
+        // Transfer from rewardEligibleContract to existingContract using the fourth fraction
+        _transfer(rewardEligibleContract, existingContract, _amountToTransfer(rewardEligibleContract, fraction4));
+
+        // Transfer from existingContract to rewardEligibleContract2 using the fifth fraction
+        _transfer(existingContract, rewardEligibleContract2, _amountToTransfer(existingContract, fraction5));
+
+        // Transfer from rewardEligibleContract2 to existingContract2 using the sixth fraction
+        _transfer(rewardEligibleContract2, existingContract2, _amountToTransfer(rewardEligibleContract2, fraction6));
+
+        _distributeAndWithdraw(amountToDistribute);
+
+        // Check that user1, rewardEligibleContract, existingContract, rewardEligibleContract2 and existingContract2 have received approximate expected rewards
+        _assertApproxRewardsFromDistribution(user1, amountToDistribute);
+        _assertApproxRewardsFromDistribution(rewardEligibleContract, amountToDistribute);
+        assertEq(token.earned(existingContract), 0);
+        _assertApproxRewardsFromDistribution(rewardEligibleContract2, amountToDistribute);
+        assertEq(token.earned(existingContract2), 0);
+    }
     
 }
