@@ -19,6 +19,7 @@ abstract contract CsrRewardsERC20 is ERC20, TurnstileRegister {
     mapping(address => bool) internal _rewardEligibleAddress;
 
     uint16 internal constant _BPS = 10000;
+    uint256 internal constant _SCALAR = 1e36;
 
     event RewardsDelivered(uint256 amount);
     event RewardsClaimed(address indexed account, uint256 amount);
@@ -45,7 +46,7 @@ abstract contract CsrRewardsERC20 is ERC20, TurnstileRegister {
 
     function earned(address account) public view virtual returns (uint256) {
         return rewardsEarned[account]
-            + (_rewardEligibleBalances[account] * (rewardPerEligibleToken - userRewardPerTokenPaid[account]) / 1e36);
+            + (_rewardEligibleBalances[account] * (rewardPerEligibleToken - userRewardPerTokenPaid[account]) / _SCALAR);
     }
 
     function turnstileBalance() public view virtual returns (uint256) {
@@ -86,7 +87,7 @@ abstract contract CsrRewardsERC20 is ERC20, TurnstileRegister {
     }
 
     function _registerRewardDelivery(uint256 rewardAmount) internal virtual {
-        rewardPerEligibleToken += rewardAmount * 1e36 / _totalRewardEligibleSupply;
+        rewardPerEligibleToken += rewardAmount * _SCALAR / _totalRewardEligibleSupply;
 
         emit RewardsDelivered(rewardAmount);
     }
