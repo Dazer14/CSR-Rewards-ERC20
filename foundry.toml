@@ -8,4 +8,4 @@ remappings = [
     "@forge/=lib/forge-std/src/"
 ]
 [rpc_endpoints]
-canto = "https://canto.gravitychain.io"
+canto = "https://canto.slingshot.finance/"
