@@ -71,10 +71,9 @@ contract Base is Test {
     uint256 public constant REWARD_DELTA = 0.00000001e18; // 99.999999% of expected value
     // Reward distribution fuzz range
     // Should aim to make these closer to typical range
-    uint256 public constant DISTRIBUTION_MAX = 1000e18; 
-    uint256 public constant DISTRIBUTION_MIN = 1_000_000_000_000;
+    uint256 public constant DISTRIBUTION_MIN = 1e12;
+    uint256 public constant DISTRIBUTION_MAX = 1e24; 
     uint256 public constant DIRECT_SEND_MAX = 1_000_000e18;
-    
 
     function setUp() public {
         vm.createSelectFork(vm.rpcUrl("canto"));
