@@ -18,4 +18,5 @@
 ### Use
 - Refer to SimpleTokenExample.sol for basic implementation
 - Need to override `_afterTokenTransfer`
-- **Important** - Need to choose appropriate SCALAR value, refer to Scalar.md
+- **Important** - Need to choose appropriate `_SCALAR` value, refer to Scalar.md
+- Excessively large total supply amounts may quickly lead to overflow issues

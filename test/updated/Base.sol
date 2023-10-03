@@ -62,7 +62,10 @@ contract Base is Test {
     address public rewardEligibleContract;
 
     uint256 public constant MIN_TOTAL_SUPPLY = 1e18;
-    uint256 public constant MAX_TOTAL_SUPPLY = 1_000_000_000_000_000_000e18;
+    // CANTO - 1 Billion - 1_000_000_000e18
+    // Billion Billion - 1_000_000_000_000_000_000e18
+    // Trillion Trillion - 1_000_000_000_000_000_000_000_000e18
+    uint256 public constant MAX_TOTAL_SUPPLY = 1_000_000_000e18;
 
     uint16 public constant MAX_FRACTION = type(uint16).max;
     uint16 public constant MIN_FRACTION = 0;
@@ -70,8 +73,8 @@ contract Base is Test {
     // Checking an extremely close value instead
     uint256 public constant REWARD_DELTA = 0.00000001e18; // 99.999999% of expected value
     // Reward distribution fuzz range
-    // Should aim to make these closer to typical range
-    uint256 public constant DISTRIBUTION_MIN = 1e12;
+    // This is testing as low as a manually transfered single wei of CANTO
+    uint256 public constant DISTRIBUTION_MIN = 1;
     uint256 public constant DISTRIBUTION_MAX = 1e24; 
     uint256 public constant DIRECT_SEND_MAX = 1_000_000e18;
 
