@@ -18,7 +18,6 @@ abstract contract CsrRewardsERC20 is ERC20, TurnstileRegister {
     mapping(address => uint256) internal _rewardEligibleBalances;
     mapping(address => bool) internal _rewardEligibleAddress;
 
-    uint16 internal constant _BPS = 10000;
     uint256 internal constant _SCALAR = 1e42;
 
     event RewardsDelivered(uint256 amount);
