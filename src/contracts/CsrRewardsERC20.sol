@@ -18,12 +18,14 @@ abstract contract CsrRewardsERC20 is ERC20, TurnstileRegister {
     mapping(address => uint256) internal _rewardEligibleBalances;
     mapping(address => bool) internal _rewardEligibleAddress;
 
-    uint256 internal constant _SCALAR = 1e42;
+    uint256 public scalar;
 
     event RewardsDelivered(uint256 amount);
     event RewardsClaimed(address indexed account, uint256 amount);
 
-    constructor() TurnstileRegister() {}
+    constructor(uint8 _scalar) TurnstileRegister() {
+        scalar = 10 ** _scalar;
+    }
 
     receive() external payable virtual {
         _registerRewardDelivery(msg.value);
@@ -45,7 +47,7 @@ abstract contract CsrRewardsERC20 is ERC20, TurnstileRegister {
 
     function earned(address account) public view virtual returns (uint256) {
         return _rewardsEarned[account]
-            + (_rewardEligibleBalances[account] * (_rewardPerEligibleToken - _accountRewardPerTokenPaid[account]) / _SCALAR);
+            + (_rewardEligibleBalances[account] * (_rewardPerEligibleToken - _accountRewardPerTokenPaid[account]) / scalar);
     }
 
     function turnstileBalance() public view virtual returns (uint256) {
@@ -58,7 +60,7 @@ abstract contract CsrRewardsERC20 is ERC20, TurnstileRegister {
         /// @dev First time transfer to address with code size 0 will register as reward eligible
         /// Contract addresses will have code size 0 before and during construction
         /// Any method that sends this token to that address during its construction will make that contract reward eligible
-        /// Self-minting in constructor makes this contract reward eligible
+        /// Self-minting in this contracts constructor makes this contract reward eligible
         if (_rewardEligibleAddress[to]) {
             _increaseRewardEligibleBalance(to, amount);
         } else {
@@ -87,14 +89,14 @@ abstract contract CsrRewardsERC20 is ERC20, TurnstileRegister {
     }
 
     function _registerRewardDelivery(uint256 rewardAmount) internal virtual {
-        _rewardPerEligibleToken += rewardAmount * _SCALAR / _totalRewardEligibleSupply;
+        _rewardPerEligibleToken += rewardAmount * scalar / _totalRewardEligibleSupply;
 
         emit RewardsDelivered(rewardAmount);
     }
 
     function _transferCANTO(address to, uint256 amount) internal virtual {
         (bool success,) = payable(to).call{value: amount}("");
-        require(success, "CsrRewardsERC20: Unable to send value, recipient may have reverted");
+        require(success, "CsrRewardsERC20: Unable to transfer CANTO, recipient may have reverted");
     }
 
     /// EXTERNAL MUTABLE FUNCTIONS

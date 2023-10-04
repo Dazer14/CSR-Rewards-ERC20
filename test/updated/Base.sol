@@ -13,8 +13,9 @@ interface TurnstileOwnerControls {
 contract TestToken is ERC20, CsrRewardsERC20 {
     constructor(
         string memory _name, 
-        string memory _symbol
-    ) ERC20(_name, _symbol) CsrRewardsERC20() {}
+        string memory _symbol,
+        uint8 _scalar
+    ) ERC20(_name, _symbol) CsrRewardsERC20(_scalar) {}
 
     function _afterTokenTransfer(address from, address to, uint amount) 
         internal 
@@ -81,7 +82,7 @@ contract Base is Test {
     function setUp() public {
         vm.createSelectFork(vm.rpcUrl("canto"));
         
-        token = new TestToken("Test", "TEST");
+        token = new TestToken("Test", "TEST", 36);
 
         vm.deal(turnstileOwner, type(uint256).max);
 
